@@ -340,130 +340,173 @@ def _section(label, title):
     st.markdown(f'<div class="up-lbl" style="margin-top:22px">{h(label)}</div><div class="up-h">{h(title)}</div>', unsafe_allow_html=True)
 
 
-def static_top():
-    c1, c2 = st.columns([1.15, 1], gap="large", vertical_alignment="center")
-    with c1:
-        st.markdown('<span class="fp-eyebrow">FleetProfit · Uptime desk</span>', unsafe_allow_html=True)
-        st.title("Catch it before the roadside")
-        st.markdown('<p class="up-lede">The FleetProfit Agent predicts which trucks and trailers will fail in the next two weeks, when, and where they will be when it happens. '
-                    'Then it fixes each one inside a stop the truck is already making, and asks a person only when a load or a budget is affected.</p>', unsafe_allow_html=True)
-    with c2:
-        st.markdown('<div class="preview"><div class="ch"># fleet-ops · Mon 05:36</div><div class="sk-m" style="padding:0"><div class="sk-av" style="background:#073732">FP</div>'
-                    '<div style="min-width:0"><div><span class="sk-n">FleetProfit Agent</span><span class="sk-app">APP</span><span class="sk-t">Uptime desk</span></div>'
-                    '<div class="sk-body">Unit 131’s right-rear tire drops under the 80 psi pull limit in about <b>3 days</b>, during Thursday’s loaded run on I-80 in Iowa. '
-                    'Fix booked at the Lancaster terminal <b>tonight</b>, inside its planned stop. No approval needed.</div></div></div></div>', unsafe_allow_html=True)
-
-    _section("Your fleet", "A fleet that runs hard and far from home")
-    facts = [("70", "power units, about 200 trailers"), ("6.8M mi", "in 2025, about 97,000 per truck"),
-             ("Peterbilt 579", "tractors, with SmartLINQ remote diagnostics"), ("Samsara", "fleet telematics and driver app"),
-             ("Flatbed", "metal building parts, steel coils, ag products, lumber"), ("3 terminals", "Grand Island NE · Rensselaer IN · Lancaster SC")]
-    _box_grid("g-prof", "".join(f'<div class="box"><b class="big">{h(a)}</b><span class="s">{h(b)}</span></div>' for a, b in facts))
-    st.markdown('<p class="src-line">From the carrier’s FMCSA registration and its own website (Peterbilt 579 and Samsara). Engine model to confirm.</p>', unsafe_allow_html=True)
-
-    _section("What it can do", "One loop, every day, across the whole fleet")
-    _box_grid("g-caps", "".join(f'<div class="box cap"><div class="n">{i+1:02d}</div><h4>{h(a)}</h4><p>{h(b)}</p></div>' for i, (a, b) in enumerate(CAPS))
-              + '<div class="box cap loop"><h4>Then it starts again</h4><p>Every morning, on all 70 tractors and the trailers behind them.</p></div>')
-
-    _section("What it watches for", "Seven failures that stop a flatbed fleet")
-    _box_grid("g-iss", "".join(f'<div class="box iss"><div class="ev">{h(ev)}</div><h4>{h(t)}</h4><dl><dt>Why it matters</dt><dd>{h(w)}</dd>'
-                               f'<dt>Signal you already have</dt><dd>{h(sg)}</dd><dt>What the agent does</dt><dd>{h(ac)}</dd></dl></div>' for ev, t, w, sg, ac in ISS))
-
-    _section("The forecast", "The next 14 days, as the agent sees it")
-    st.caption("Monday’s sweep. Each bar is when a failure is likely; each dot is the fix, booked before it. Sample units.")
-    pct = lambda d: f"{d/14*100:.2f}%"
-    lanes = "".join(f'<div class="fc-unit"><b>{h(u)}</b><small>{h(w)}</small></div><div class="fc-lane" title="{h(u)}: likely {DAYS[s]}–{DAYS[e]} · fixed {h(wh)}">'
-                    f'<span class="fc-win" style="left:{pct(s)};width:{pct(e-s+1)}"></span><span class="fc-fix" style="left:{pct(f+0.5)}"></span></div>' for u, w, s, e, f, wh in FC)
-    st.markdown(f'<div class="box fc"><div class="fc-grid"><div></div><div class="fc-days">{"".join(f"<span>{d}</span>" for d in DAYS)}</div>{lanes}</div>'
-                '<div class="fc-leg"><span>▭ Likely failure window</span><span>● Fix booked, inside a planned stop</span></div></div>', unsafe_allow_html=True)
-    with st.expander("Show the forecast as a table"):
-        st.markdown("| Unit | Predicted failure | Likely window | Fix booked |\n|---|---|---|---|\n" +
-                    "\n".join(f"| {u} | {w} | {DAYS[s]} – {DAYS[e]} | {wh} |" for u, w, s, e, f, wh in FC))
-
-
-def static_bottom():
-    _section("What changes", "The maintenance manager’s week, before and after")
-    before = ["Tire, fault and driver-report alerts arrive in different screens, and most wait",
-              "Phone calls to dispatch and three terminals to find when a truck is free",
-              "Problems surface at a roadside inspection or a breakdown, far from home",
-              "Winter prep happens truck by truck, after the first freeze-up",
-              "Nobody checks that a fix held until it fails again"]
-    after = ["One sweep each morning predicts failures for the next 14 days, with dates",
-             "Fixes are booked inside stops the trucks already make, at whichever terminal is on the route",
-             "Two approvals all week, each with the options and a recommendation",
-             "Winter parts ordered once and fitted at the next PM",
-             "Every fix checked on the data afterwards, and the pattern used across the fleet"]
-    _box_grid("g-2", f'<div class="box ba"><h4>Today</h4><ul>{"".join(f"<li>{h(x)}</li>" for x in before)}</ul></div>'
-                     f'<div class="box ba after"><h4>With the agent</h4><ul>{"".join(f"<li>{h(x)}</li>" for x in after)}</ul></div>')
-    nums = [("6", "failures predicted this week"), ("5", "fixed before they failed"), ("2", "approvals asked of people"),
-            ("0", "extra shop visits"), ("18", "tractors prepped for winter"), ("3", "more trailers caught by the sweep")]
-    st.markdown("")
-    _box_grid("g-6", "".join(f'<div class="box num"><b>{a}</b><span>{h(b)}</span></div>' for a, b in nums))
-    st.markdown('<div class="up-h" style="font-size:19px;margin-top:16px">What a roadside failure costs a fleet</div>', unsafe_allow_html=True)
-    cost = [("$2,500–5,000+", "to tow a Class 8 truck, before the repair"), ("3–9×", "the cost of the same repair done as planned work"),
-            ("$700–1,500", "revenue lost for each day a truck is down unplanned")]
-    _box_grid("g-3", "".join(f'<div class="box num"><b>{a}</b><span>{h(b)}</span></div>' for a, b in cost))
-    st.markdown('<p class="src-line">Industry figures: <a href="https://www.geotab.com/blog/cut-commercial-truck-breakdown-costs/">Geotab</a> (towing, planned vs unplanned) and '
-                '<a href="https://www.ccjdigital.com/business/article/14939604/new-tech-gives-fleets-a-jumpstart-on-vehicle-fault-codes">CCJ</a> (lost revenue per day).</p>', unsafe_allow_html=True)
-
-    _section("Works with what you have", "If Samsara and SmartLINQ already send alerts, the agent acts on them")
-    st.markdown('<p class="up-lede" style="font-size:15px">It decides, books the work, tells people and checks the fix. Where a signal is missing, it uses what you do have.</p>', unsafe_allow_html=True)
-    st.markdown('<div class="box ox"><table class="wt"><tr><th>Signal</th><th>Where it comes from</th><th>If you don’t have it</th></tr>' +
-                "".join(f"<tr><td><b>{h(a)}</b></td><td>{h(b)}</td><td>{h(c)}</td></tr>" for a, b, c in HAVE) + "</table></div>", unsafe_allow_html=True)
-    st.markdown("")
-    _box_grid("g-2", '<div class="box"><h4>Inside your rules</h4><ul><li>Fixes that fit a planned stop are booked automatically</li><li>Holding a pickup goes to dispatch</li>'
-                     '<li>Orders and off-network spend over your limit go to the manager</li><li>An unsafe tire is fixed at once and reported</li><li>Every step is in one Slack thread and an audit log</li></ul></div>'
-                     '<div class="box"><h4>Nothing to replace</h4><ul><li>TMT stays the system of record; work orders land there</li><li>Samsara and the driver app stay as they are</li>'
-                     '<li>People work in Slack or Teams</li><li>Start in suggest-only mode, then switch rules on one at a time</li></ul></div>')
-    st.markdown("")
-    st.markdown('<div class="pilot"><h4>Prove it on your own history first</h4><p>Before anything runs live, we replay the last 90 days of your Samsara data, driver reports and TMT repair orders.</p>'
-                '<ol><li>Which failures showed up in the data beforehand, and how many days earlier?</li><li>Which fixes could have fit a stop the truck was already making?</li>'
-                '<li>What would the agent have asked of dispatch and the manager, and how often?</li></ol></div>', unsafe_allow_html=True)
-    st.caption("Interactive simulation using sample data for units, people and events. Integrations and external actions are simulated.")
-
-
-# ============================== simulation ==============================
+# ============================== state + navigation ==============================
 K = "up_"
+PAGES = [("watch", "What it watches for"), ("forecast", "Mon 05:30 · 14-day forecast"),
+         ("sweep", "Mon 05:30 · Uptime sweep"), ("changes", "What changes")]
+SYSTEMS = ["Samsara · telematics, DVIR", "Peterbilt SmartLINQ", "TMT · API, read + write", "TMS · export", "Parts suppliers · email", "Slack / Teams"]
+
+
+def _init():
+    ss = st.session_state
+    ss.setdefault(K + "page", -1)          # -1 = How it works
+    ss.setdefault(K + "choices", [])
+    ss.setdefault(K + "shown", 0)
+    ss.setdefault(K + "animate", True)
+    ss.setdefault(K + "speed", "Normal")
+    ss.setdefault(K + "hood", False)
+
+
+def _go(i):
+    ss = st.session_state
+    ss[K + "page"] = i
+    if i >= 0 and PAGES[i][0] == "sweep":
+        ss[K + "choices"] = []
+        ss[K + "shown"] = 0
 
 
 def _choose(i):
     st.session_state[K + "choices"].append(i)
 
 
-def _replay():
-    st.session_state[K + "choices"] = []
-    st.session_state[K + "shown"] = 0
-    st.session_state[K + "animate"] = True
+def _sidebar(cur):
+    with st.sidebar:
+        st.markdown("### FleetProfit Uptime Desk")
+        st.markdown('<span class="fp-eyebrow">Sample data</span>', unsafe_allow_html=True)
+        st.caption("Demo fleet shaped like a regional flatbed carrier: 70 Peterbilt 579 tractors, 204 trailers, three terminals.")
+        st.markdown('<div class="fp-head">The uptime desk</div>', unsafe_allow_html=True)
+        st.button("How it works", key=K + "home", on_click=_go, args=(-1,), use_container_width=True,
+                  type="primary" if cur == -1 else "secondary")
+        for i, (_, label) in enumerate(PAGES):
+            st.button(f"{i + 1}. {label}", key=f"{K}nav{i}", on_click=_go, args=(i,),
+                      type="primary" if cur == i else "secondary", use_container_width=True)
+        st.markdown('<div class="fp-head">Presenter</div>', unsafe_allow_html=True)
+        st.toggle("Animate in real time", key=K + "animate")
+        st.select_slider("Speed", ["Slow", "Normal", "Fast"], key=K + "speed")
+        st.toggle("Show “Under the hood” beside the chat", key=K + "hood")
+        st.markdown('<div class="fp-head">Connected through the harness (sample)</div>', unsafe_allow_html=True)
+        st.markdown("".join(f'<span class="fp-chip">{h(s)}</span>' for s in SYSTEMS), unsafe_allow_html=True)
 
 
-def simulation():
+def _next(cur):
+    if cur + 1 < len(PAGES):
+        st.button(f"Next: {PAGES[cur + 1][1]} →", type="primary", on_click=_go, args=(cur + 1,), key=f"{K}next{cur}")
+    else:
+        st.button("Back to How it works", on_click=_go, args=(-1,), key=f"{K}next{cur}")
+
+
+def _page_head(cur, eyebrow, title, lede=None):
+    st.markdown(f'<span class="fp-eyebrow">{cur + 1} of {len(PAGES)} · {h(eyebrow)}</span>', unsafe_allow_html=True)
+    st.subheader(title)
+    if lede:
+        st.markdown(lede)
+
+
+# ============================== pages ==============================
+def intro():
+    st.markdown('<span class="fp-eyebrow">FleetProfit · AI agent for fleet uptime</span>', unsafe_allow_html=True)
+    st.title("Catch it before the roadside")
+    st.subheader("One agent, one sweep, every truck and trailer")
+    st.markdown(
+        "The FleetProfit Agent predicts which trucks and trailers will fail in the next two weeks, when, and where they "
+        "will be when it happens. Then it fixes each one inside a stop the truck is already making, in **#fleet-ops**, "
+        "and asks a person only when a load or a budget is affected. Everyone else is kept in the loop.")
+    st.markdown('<div class="fp-head">What a morning message looks like</div>', unsafe_allow_html=True)
+    st.markdown('<div class="preview" style="max-width:720px"><div class="ch"># fleet-ops · Mon 05:36</div><div class="sk-m" style="padding:0"><div class="sk-av" style="background:#073732">FP</div>'
+                '<div style="min-width:0"><div><span class="sk-n">FleetProfit Agent</span><span class="sk-app">APP</span><span class="sk-t">Uptime desk</span></div>'
+                '<div class="sk-body">Unit 131’s right-rear tire drops under the 80 psi pull limit in about <b>3 days</b>, during Thursday’s loaded run on I-80 in Iowa. '
+                'Fix booked at the Lancaster terminal <b>tonight</b>, inside its planned stop. No approval needed.</div></div></div></div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="fp-head">How it works</div>', unsafe_allow_html=True)
+    steps = [
+        ("1 · Signals", "Watch every unit", "Tire pressure, fault codes, air-system data and driver reports from Samsara and SmartLINQ, every few minutes."),
+        ("2 · Knowledge base", "Failure rules", "Rules for how each failure develops, your pull limits, PM schedules, and each rule’s track record."),
+        ("3 · Agent", "Predict and plan", "Projects each trend to a failure date, finds where the unit will be, and picks a stop it already makes."),
+        ("4 · Harness", "Connects the tools", "Books work orders in TMT, checks loads in the TMS, holds parts and messages drivers, with an audit log."),
+        ("5 · Slack", "Approve and inform", "Asks dispatch or the manager only where a rule says so. Then it checks every fix on the data."),
+    ]
+    st.markdown('<div class="fp-flow">' + "".join(
+        f'<div class="fp-step"><div class="n">{a}</div><b>{b}</b><span>{h(c)}</span></div>' for a, b, c in steps) + "</div>",
+        unsafe_allow_html=True)
+
+    st.markdown('<div class="fp-head">What it can do</div>', unsafe_allow_html=True)
+    _box_grid("g-caps", "".join(f'<div class="box cap"><div class="n">{i+1:02d}</div><h4>{h(a)}</h4><p>{h(b)}</p></div>' for i, (a, b) in enumerate(CAPS))
+              + '<div class="box cap loop"><h4>Then it starts again</h4><p>Every morning, on all 70 tractors and the trailers behind them.</p></div>')
+
+    st.markdown('<div class="fp-head">The fleet it is built for</div>', unsafe_allow_html=True)
+    facts = [("70", "power units, about 200 trailers"), ("6.8M mi", "in 2025, about 97,000 per truck"),
+             ("Peterbilt 579", "tractors, with SmartLINQ remote diagnostics"), ("Samsara", "fleet telematics and driver app"),
+             ("Flatbed", "metal building parts, steel coils, ag products, lumber"), ("3 terminals", "Grand Island NE · Rensselaer IN · Lancaster SC")]
+    _box_grid("g-prof", "".join(f'<div class="box"><b class="big">{h(a)}</b><span class="s">{h(b)}</span></div>' for a, b in facts))
+    st.markdown('<p class="src-line">From the carrier’s FMCSA registration and its own website (Peterbilt 579 and Samsara). Engine model to confirm.</p>', unsafe_allow_html=True)
+
+    st.markdown('<div class="fp-head">Who is involved</div>', unsafe_allow_html=True)
+    st.markdown(
+        "| Who | Role | What the agent asks of them |\n|---|---|---|\n"
+        "| You | Maintenance manager | Approves parts orders over $1,500, off-network spend and changes to failure rules |\n"
+        "| Dana | Dispatcher | Approves holding a pickup; kept informed on any load at risk |\n"
+        "| Joel | Shop lead | Kept informed as fixes are booked into bays |\n"
+        "| Terminals | Grand Island, Rensselaer, Lancaster | Receive work orders inside planned stops |\n"
+        "| Drivers | Drivers | Told where to stop and why, through the driver app |\n"
+        "| FleetProfit Agent | Runs the sweep | Predicts, plans, books, asks for approval, checks every fix |")
+    st.button("Start: what it watches for", type="primary", on_click=_go, args=(0,), key=K + "start")
+
+
+def page_watch(cur):
+    _page_head(cur, "The failures", "Seven failures that stop a flatbed fleet",
+               "For each one: why it matters, the signal you already have, and what the agent does about it.")
+    _box_grid("g-iss", "".join(f'<div class="box iss"><div class="ev">{h(ev)}</div><h4>{h(t)}</h4><dl><dt>Why it matters</dt><dd>{h(w)}</dd>'
+                               f'<dt>Signal you already have</dt><dd>{h(sg)}</dd><dt>What the agent does</dt><dd>{h(ac)}</dd></dl></div>' for ev, t, w, sg, ac in ISS))
+    st.markdown("")
+    _next(cur)
+
+
+def page_forecast(cur):
+    _page_head(cur, "Mon 05:30 · the forecast", "The next 14 days, as the agent sees it",
+               "Monday’s sweep. Each bar is when a failure is likely; each dot is the fix, booked before it. Sample units.")
+    pct = lambda d: f"{d/14*100:.2f}%"
+    lanes = "".join(f'<div class="fc-unit"><b>{h(u)}</b><small>{h(w)}</small></div><div class="fc-lane" title="{h(u)}: likely {DAYS[s]}–{DAYS[e]} · fixed {h(wh)}">'
+                    f'<span class="fc-win" style="left:{pct(s)};width:{pct(e-s+1)}"></span><span class="fc-fix" style="left:{pct(f+0.5)}"></span></div>' for u, w, s, e, f, wh in FC)
+    st.markdown(f'<div class="box fc"><div class="fc-grid"><div></div><div class="fc-days">{"".join(f"<span>{d}</span>" for d in DAYS)}</div>{lanes}</div>'
+                '<div class="fc-leg"><span>▭ Likely failure window</span><span>● Fix booked, inside a planned stop</span></div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="fp-head">The same forecast as a table</div>', unsafe_allow_html=True)
+    st.markdown("| Unit | Predicted failure | Likely window | Fix booked |\n|---|---|---|---|\n" +
+                "\n".join(f"| {u} | {w} | {DAYS[s]} – {DAYS[e]} | {wh} |" for u, w, s, e, f, wh in FC))
+    _next(cur)
+
+
+def page_sweep(cur):
     ss = st.session_state
-    ss.setdefault(K + "choices", [])
-    ss.setdefault(K + "shown", 0)
-    ss.setdefault(K + "animate", False)
-    ss.setdefault(K + "speed", "Normal")
-    _section("The agent at work", "One week on the uptime desk")
-    st.caption("Answer as Dana or as the maintenance manager with the buttons under the channel. Sample units, people and events.")
     sc = base.SCENES[0]
-    a1, a2, a3 = st.columns([6, 2, 1.4], vertical_alignment="center")
-    a1.markdown('<div class="fp-actors">' + "".join(
+    S, log, pending = base.build(0, ss[K + "choices"])
+    shown = ss[K + "shown"]
+    animate = ss[K + "animate"]
+    pace = {"Slow": 1.5, "Normal": 1.0, "Fast": 0.45}[ss[K + "speed"]]
+
+    h1, h2 = st.columns([4, 1])
+    with h1:
+        st.markdown(f'<span class="fp-eyebrow">{cur + 1} of {len(PAGES)} · {sc["when"]} · live in #fleet-ops</span>', unsafe_allow_html=True)
+        st.subheader(f"{sc['case']} · {sc['case_title']}")
+    clock_ph = h2.empty()
+    st.markdown('<div class="fp-actors">' + "".join(
         f'<div class="fp-actor{" agent" if a[0] == "FleetProfit Agent" else ""}"><b>{h(a[0])}</b><span>{h(a[1])} · {h(a[2])}</span></div>'
         for a in base.ACTORS["uptime"]) + "</div>", unsafe_allow_html=True)
-    a2.select_slider("Speed", ["Slow", "Normal", "Fast"], key=K + "speed")
-    a3.button("Play from the start", on_click=_replay, use_container_width=True)
+    st.caption("Answer as Dana or as the maintenance manager with the buttons under the channel. The week runs Monday to Thursday.")
 
-    S, log, pending = base.build(0, ss[K + "choices"])
-    animate = ss[K + "animate"]
-    shown = ss[K + "shown"] if animate else len(log)
-    pace = {"Slow": 1.5, "Normal": 1.0, "Fast": 0.45}[ss[K + "speed"]]
-    left, right = st.columns([5, 2], gap="large")
-    with left:
-        clock_ph = st.empty()
+    if ss[K + "hood"]:
+        left, right = st.columns([5, 2], gap="large")
+        with left:
+            win_ph = st.empty()
+            resp = st.container()
+        hood = right.container()
+    else:
         win_ph = st.empty()
         resp = st.container()
-    with right:
+        hood = st.expander("Under the hood · what the agent did, step by step, and the tools it called")
+    with hood:
         st.markdown('<div class="fp-head">Under the hood · what the agent is doing</div>', unsafe_allow_html=True)
         run_ph = st.empty()
-        st.markdown('<div class="fp-head">Tools it called</div>', unsafe_allow_html=True)
+        st.markdown('<div class="fp-head">Harness · tools it called</div>', unsafe_allow_html=True)
         tools_ph = st.empty()
 
     items, tools, traces = [], [], []
@@ -472,6 +515,9 @@ def simulation():
     def draw(status=("work", "Agent working"), typing=False, pend=None):
         win_ph.markdown(base._window(items, sc, state["clock"], status, typing, pend), unsafe_allow_html=True)
 
+    def draw_clock():
+        clock_ph.markdown(f'<div style="text-align:right"><span class="fp-clock">{state["clock"]}</span></div>', unsafe_allow_html=True)
+
     def draw_run(running=False, waiting=None):
         rows = "".join(base._trace_html(t, running=(running and j == len(traces) - 1)) for j, t in enumerate(traces))
         if waiting:
@@ -479,13 +525,13 @@ def simulation():
         run_ph.markdown(f'<div class="fp-run"><div>{rows or "<div class=fp-ctx>Waiting for a trigger…</div>"}</div></div>', unsafe_allow_html=True)
 
     def draw_tools():
-        tools_ph.markdown('<div class="fp-tools">' + "".join(f'<span class="fp-tool{" act" if k == "act" else ""}">✓ {h(n)}</span>' for n, k in tools) + "</div>"
-                          if tools else '<div class="fp-ctx">No tools called yet.</div>', unsafe_allow_html=True)
+        if not tools:
+            tools_ph.caption("No tools called yet.")
+        else:
+            tools_ph.markdown('<div class="fp-tools">' + "".join(
+                f'<span class="fp-tool{" act" if k == "act" else ""}">✓ {h(n)}</span>' for n, k in tools) + "</div>", unsafe_allow_html=True)
 
-    def draw_clock():
-        clock_ph.markdown(f'<span class="fp-clock">{state["clock"]}</span>', unsafe_allow_html=True)
-
-    draw_clock(); draw(); draw_run(); draw_tools()
+    draw_clock(); draw(); draw_tools(); draw_run()
     for i, (kind, item) in enumerate(log):
         fresh = animate and i >= shown
         if kind == "clock":
@@ -516,10 +562,11 @@ def simulation():
             if fresh:
                 draw()
     ss[K + "shown"] = len(log)
-    ss[K + "animate"] = True
+
     if pending:
         an, ar = base._who(pending.get("approver", "you"))
         draw(("wait", f"Waiting on @{an} ({ar})"), pend=pending)
+        draw_tools()
         draw_run(waiting=f"@{an} in #fleet-ops")
         with resp:
             st.caption(f"Respond as {an} ({ar}) in #fleet-ops")
@@ -533,7 +580,7 @@ def simulation():
                 n, _ = base._who(o["who"])
                 st.button(f"Reply as {n}: “{o['label']}”", key=f"{K}r{len(ss[K + 'choices'])}_{i}", on_click=_choose, args=(i,), use_container_width=True)
     else:
-        draw(("ok", "Resolved")); draw_run()
+        draw(("ok", "Resolved")); draw_tools(); draw_run()
         with resp:
             with st.container(border=True):
                 st.markdown("**What just happened**")
@@ -543,12 +590,72 @@ def simulation():
                 c3.caption("GOVERNED BY"); c3.markdown(base._md(sc["governed"]))
                 st.caption("Today, without the agent: " + base._md(sc["today"]))
                 st.success(f"**Outcome:** {base._md(sc['outcome'])}")
+            b1, b2 = st.columns([1, 1])
+            with b1:
+                _next(cur)
+            b2.button("Play the sweep again", on_click=_go, args=(cur,), key=K + "again")
+
+    done = not pending
+    st.markdown('<div class="fp-head">Impact this week</div>', unsafe_allow_html=True)
+    m = st.columns(4)
+    m[0].metric("Failures predicted", "6")
+    m[1].metric("Fixed before failing", "5" if done else "in progress")
+    m[2].metric("Approvals asked of people", len(ss[K + "choices"]))
+    m[3].metric("Extra shop visits", "0")
+
+
+def page_changes(cur):
+    _page_head(cur, "The difference", "The maintenance manager’s week, before and after")
+    before = ["Tire, fault and driver-report alerts arrive in different screens, and most wait",
+              "Phone calls to dispatch and three terminals to find when a truck is free",
+              "Problems surface at a roadside inspection or a breakdown, far from home",
+              "Winter prep happens truck by truck, after the first freeze-up",
+              "Nobody checks that a fix held until it fails again"]
+    after = ["One sweep each morning predicts failures for the next 14 days, with dates",
+             "Fixes are booked inside stops the trucks already make, at whichever terminal is on the route",
+             "Two approvals all week, each with the options and a recommendation",
+             "Winter parts ordered once and fitted at the next PM",
+             "Every fix checked on the data afterwards, and the pattern used across the fleet"]
+    _box_grid("g-2", f'<div class="box ba"><h4>Today</h4><ul>{"".join(f"<li>{h(x)}</li>" for x in before)}</ul></div>'
+                     f'<div class="box ba after"><h4>With the agent</h4><ul>{"".join(f"<li>{h(x)}</li>" for x in after)}</ul></div>')
+    st.markdown('<div class="fp-head" style="margin-top:18px">The week in numbers</div>', unsafe_allow_html=True)
+    nums = [("6", "failures predicted this week"), ("5", "fixed before they failed"), ("2", "approvals asked of people"),
+            ("0", "extra shop visits"), ("18", "tractors prepped for winter"), ("3", "more trailers caught by the sweep")]
+    _box_grid("g-6", "".join(f'<div class="box num"><b>{a}</b><span>{h(b)}</span></div>' for a, b in nums))
+    st.markdown('<div class="fp-head" style="margin-top:18px">What a roadside failure costs a fleet</div>', unsafe_allow_html=True)
+    cost = [("$2,500–5,000+", "to tow a Class 8 truck, before the repair"), ("3–9×", "the cost of the same repair done as planned work"),
+            ("$700–1,500", "revenue lost for each day a truck is down unplanned")]
+    _box_grid("g-3", "".join(f'<div class="box num"><b>{a}</b><span>{h(b)}</span></div>' for a, b in cost))
+    st.markdown('<p class="src-line">Industry figures: <a href="https://www.geotab.com/blog/cut-commercial-truck-breakdown-costs/">Geotab</a> (towing, planned vs unplanned) and '
+                '<a href="https://www.ccjdigital.com/business/article/14939604/new-tech-gives-fleets-a-jumpstart-on-vehicle-fault-codes">CCJ</a> (lost revenue per day).</p>', unsafe_allow_html=True)
+
+    st.markdown('<div class="fp-head" style="margin-top:18px">Works with what you have</div>', unsafe_allow_html=True)
+    st.markdown("If Samsara and SmartLINQ already send alerts, the agent acts on them: it decides, books the work, tells people and checks the fix. Where a signal is missing, it uses what you do have.")
+    st.markdown('<div class="box ox"><table class="wt"><tr><th>Signal</th><th>Where it comes from</th><th>If you don’t have it</th></tr>' +
+                "".join(f"<tr><td><b>{h(a)}</b></td><td>{h(b)}</td><td>{h(c)}</td></tr>" for a, b, c in HAVE) + "</table></div>", unsafe_allow_html=True)
+    st.markdown("")
+    _box_grid("g-2", '<div class="box"><h4>Inside your rules</h4><ul><li>Fixes that fit a planned stop are booked automatically</li><li>Holding a pickup goes to dispatch</li>'
+                     '<li>Orders and off-network spend over your limit go to the manager</li><li>An unsafe tire is fixed at once and reported</li><li>Every step is in one Slack thread and an audit log</li></ul></div>'
+                     '<div class="box"><h4>Nothing to replace</h4><ul><li>TMT stays the system of record; work orders land there</li><li>Samsara and the driver app stay as they are</li>'
+                     '<li>People work in Slack or Teams</li><li>Start in suggest-only mode, then switch rules on one at a time</li></ul></div>')
+    st.markdown("")
+    with st.container(border=True):
+        st.markdown("#### Prove it on your own history first")
+        st.markdown("Before anything runs live, we replay the last 90 days of your Samsara data, driver reports and TMT repair orders.\n"
+                    "1. Which failures showed up in the data beforehand, and how many days earlier?\n"
+                    "2. Which fixes could have fit a stop the truck was already making?\n"
+                    "3. What would the agent have asked of dispatch and the manager, and how often?")
+    st.caption("Interactive simulation using sample data for units, people and events. Integrations and external actions are simulated.")
+    _next(cur)
 
 
 # ============================== page ==============================
+_init()
 st.markdown(base.CSS, unsafe_allow_html=True)
 st.markdown(PAGE_CSS, unsafe_allow_html=True)
-st.markdown("<style>[data-testid='stSidebar'],[data-testid='collapsedControl']{display:none}</style>", unsafe_allow_html=True)
-static_top()
-simulation()
-static_bottom()
+_cur = st.session_state[K + "page"]
+_sidebar(_cur)
+if _cur < 0:
+    intro()
+else:
+    {"watch": page_watch, "forecast": page_forecast, "sweep": page_sweep, "changes": page_changes}[PAGES[_cur][0]](_cur)
