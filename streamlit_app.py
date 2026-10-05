@@ -29,7 +29,7 @@ PLAYBOOKS = {
     "planner": "Shop plan",
 }
 
-SYSTEMS = ["TMT · API, read", "Telematics · MCP", "TMS · export", "invoices@ mailbox", "AP · hold only", "Slack / Teams"]
+SYSTEMS = ["TMT · API, read + write", "Telematics · MCP", "TMS · export", "invoices@ mailbox", "AP · hold, release on approval", "Slack / Teams"]
 
 
 def money(n):
@@ -77,7 +77,7 @@ SCENES = [
                             ["KC Interstate mobile tech, 9 mi", "On site 22:30, keeps the 10:00 delivery", "Off-network; must keep the failed part", "$1,800–2,400"],
                             ["Midway Truck Center, 22 mi", "Open 24 h", "No aftertreatment bay, likely a second tow", "Unknown"]],
                 "rec": 0,
-                "recommendation": "**Dealer.** It protects the warranty claim on a 7-month-old DPF. I’ll ask the customer to move the appointment to 15:00.",
+                "recommendation": "**Dealer.** It protects the warranty claim on a DPF fitted in March, under 7 months ago. I’ll ask the customer to move the appointment to 15:00.",
                 "approval": ["you", "road call over $1,500"],
                 "fyi": ["@Dana · load 48213 is at risk", "R. Alvarez · told to stay with the truck (driver app)"]}},
             {"t": "choice", "ch": "fleet-ops", "approver": "you", "opts": [
@@ -149,18 +149,18 @@ SCENES = [
         "id": "invoice", "agent": "auditor", "when": "Wed 08:31", "name": "Invoice",
         "case": "CASE-1043", "case_title": "INV-20931 · KC Interstate Diesel · $4,860.00", "opened": "08:31",
         "today": "The repair bill arrives as a PDF. Someone types it in and it gets paid. Nobody checks it.",
-        "insight": "The bill has a duplicate fee and 2.1 h of labour above standard, and telematics shows the truck was on site only 4 h 39 m.",
+        "insight": "The bill has a duplicate fee and 2.1 h of labor above standard, and telematics shows the truck was on site only 4 h 39 m.",
         "action": "Put the payment on hold, set out three ways to respond, drafted the correction, and coded the repair order in TMT.",
-        "governed": "Findings over $100 need approval · fleet labour standards · spend approved on the road call",
+        "governed": "Findings over $100 need approval · fleet labor standards · spend approved on the road call",
         "outcome": "Invoice checked within two minutes of arriving, payment held, correction sent with evidence, follow-up scheduled.",
         "ev": [
             {"t": "clock", "v": "Wed Sep 30 · 08:31"},
             {"t": "trace", "k": "trigger", "s": "Email", "h": "Invoice received", "d": "invoices@ · from KC Interstate Diesel · INV-20931.pdf"},
             {"t": "trace", "k": "read", "s": "Document", "h": "Read the invoice", "d": "9 lines · total $4,860.00 · Unit 214 · Sep 29"},
             {"t": "trace", "k": "read", "s": "Log", "h": "Match to the road call", "d": "CASE-1042 · approved up to $2,500 at 21:27 · raised to $4,500 at 00:43 for DPF replacement"},
-            {"t": "trace", "k": "read", "s": "TMT", "h": "Standard labour, this engine", "d": "Fleet history, DD15 · forced regen 1.0 h (11 jobs) · DPF R&R 2.4 h (6 jobs)"},
-            {"t": "trace", "k": "read", "s": "Telematics", "h": "Time at the repair site", "d": "Truck stationary at tech location 22:31 → 03:10 (4 h 39 m)\nBilled: 5.5 h labour + 2 diagnostic fees"},
-            {"t": "trace", "k": "think", "s": "Agent", "h": "Check every line", "d": "Lines 2 and 7 identical ($185) · labour 2.1 h over standard ($304.50) · total $360 over approval"},
+            {"t": "trace", "k": "read", "s": "TMT", "h": "Standard labor, this engine", "d": "Fleet history, DD15 · forced regen 1.0 h (11 jobs) · DPF R&R 2.4 h (6 jobs)"},
+            {"t": "trace", "k": "read", "s": "Telematics", "h": "Time at the repair site", "d": "Truck stationary at tech location 22:31 → 03:10 (4 h 39 m)\nBilled: 5.5 h labor + 2 diagnostic fees"},
+            {"t": "trace", "k": "think", "s": "Agent", "h": "Check every line", "d": "Lines 2 and 7 identical ($185) · labor 2.1 h over standard ($304.50) · total $360 over approval"},
             {"t": "trace", "k": "read", "s": "Warranty", "h": "Part coverage", "d": "DPF $2,950.00 → claimable from Hoosier Diesel (condition logged at 00:43)"},
             {"t": "trace", "k": "act", "s": "AP", "h": "Payment hold", "d": "INV-20931 held pending review (within the agent’s rights)"},
             {"t": "trace", "k": "policy", "s": "Rule", "h": "Who approves", "d": "Findings over $100 → maintenance manager · assigning approval in #fleet-ops"},
@@ -168,16 +168,16 @@ SCENES = [
                 "title": "INV-20931 from KC Interstate: $4,860.00, three problems",
                 "context": [["Approved on CASE-1042: up to $4,500 (raised at 00:43)", "Slack log"],
                             ["Diagnostic fee charged twice (lines 2 and 7): $185.00", "Invoice"],
-                            ["Labour 5.5 h vs 3.4 h standard for a DD15, and the truck was on site only 4 h 39 m: $304.50", "TMT + telematics"],
+                            ["Labor 5.5 h vs 3.4 h standard for a DD15, and the truck was on site only 4 h 39 m: $304.50", "TMT + telematics"],
                             ["DPF part $2,950.00 is claimable from Hoosier Diesel", "KB"]],
                 "options": [["Correct both", "Recovers $489.50 with evidence", "Some friction with the vendor", "Pay $4,370.50"],
-                            ["Labour only", "Goodwill for the late call-out", "Leaves $185.00 on the table", "Pay $4,555.50"],
+                            ["Labor only", "Goodwill for the late call-out", "Leaves $185.00 on the table", "Pay $4,555.50"],
                             ["Pay as billed", "No friction", "$489.50 lost, overspend undocumented", "Pay $4,860.00"]],
                 "rec": 0,
                 "recommendation": "**Correct both,** with the telematics on-site time attached. Payment is already on hold in AP.",
                 "approval": ["you", "invoice findings over $100"],
                 "fyi": ["AP · INV-20931 on hold until you decide"],
-                "quote": {"h": "Draft to billing@kcinterstate.example", "body": "Before we pay INV-20931 we need two corrections:\n1. The diagnostic fee appears twice (lines 2 and 7): $185.00.\n2. Labour of 5.5 h is above the 3.4 h standard for this job, and our telematics shows 4 h 39 m on site: 2.1 h × $145 = $304.50.\nWe will pay $4,370.50 on a revised invoice. Please keep the removed DPF for 30 days."}}},
+                "quote": {"h": "Draft to billing@kcinterstate.example", "body": "Before we pay INV-20931 we need two corrections:\n1. The diagnostic fee appears twice (lines 2 and 7): $185.00.\n2. Labor of 5.5 h is above the 3.4 h standard for this job, and our telematics shows 4 h 39 m on site: 2.1 h × $145 = $304.50.\nWe will pay $4,370.50 on a revised invoice. Please keep the removed DPF for 30 days."}}},
             {"t": "choice", "ch": "fleet-ops", "approver": "you", "opts": [
                 {"label": "Approve: correct both", "btn": True, "primary": True, "then": [{"t": "set", "k": "dispute", "v": 489.5}]},
                 {"label": "Pay as billed", "btn": True, "then": [
@@ -187,11 +187,11 @@ SCENES = [
                         {"label": "Send the correction instead", "btn": True, "primary": True, "then": [{"t": "set", "k": "dispute", "v": 489.5}]},
                         {"label": "Pay as billed", "btn": True, "then": [{"t": "set", "k": "dispute", "v": 0}]}]},
                 ]},
-                {"label": "Waive the duplicate fee, they came out at 10pm. Push on labour only.", "who": "you", "then": [
-                    {"t": "trace", "k": "think", "s": "Agent", "h": "Revise the correction", "d": "Drop the duplicate fee · keep the labour correction · cite telematics on-site time"},
+                {"label": "Waive the duplicate fee, they came out at 10pm. Push on labor only.", "who": "you", "then": [
+                    {"t": "trace", "k": "think", "s": "Agent", "h": "Revise the correction", "d": "Drop the duplicate fee · keep the labor correction · cite telematics on-site time"},
                     {"t": "msg", "ch": "fleet-ops", "time": "08:36", "b": {
-                        "text": "Done. Correction is now **$304.50** (labour only), with the on-site time as evidence. Pay $4,555.50 on the revised invoice.",
-                        "quote": {"h": "Revised draft", "body": "Thanks for coming out late on Sep 29. One correction before we pay INV-20931: labour of 5.5 h is above the 3.4 h standard for this job, and our telematics shows 4 h 39 m on site. Please adjust by 2.1 h × $145 = $304.50. We will pay $4,555.50 on a revised invoice."},
+                        "text": "Done. Correction is now **$304.50** (labor only), with the on-site time as evidence. Pay $4,555.50 on the revised invoice.",
+                        "quote": {"h": "Revised draft", "body": "Thanks for coming out late on Sep 29. One correction before we pay INV-20931: labor of 5.5 h is above the 3.4 h standard for this job, and our telematics shows 4 h 39 m on site. Please adjust by 2.1 h × $145 = $304.50. We will pay $4,555.50 on a revised invoice."},
                         "approval": ["you", "send to vendor"]}},
                     {"t": "choice", "ch": "fleet-ops", "approver": "you", "opts": [{"label": "Send correction", "btn": True, "primary": True, "then": [{"t": "set", "k": "dispute", "v": 304.5}]}]},
                 ]},
@@ -222,30 +222,30 @@ SCENES = [
         "ev": [
             {"t": "clock", "v": "Wed Sep 30 · 08:41"},
             {"t": "trace", "k": "trigger", "s": "Agent", "h": "Case opened from the invoice check", "d": "CASE-1044 · DPF assembly · Unit 214 · $2,950.00"},
-            {"t": "trace", "k": "read", "s": "Warranty", "h": "Coverage terms", "d": "Hoosier Diesel parts warranty: 12 months · parts plus labour at standard time (sample terms)"},
+            {"t": "trace", "k": "read", "s": "Warranty", "h": "Coverage terms", "d": "Hoosier Diesel parts warranty: 12 months · parts plus labor at standard time (sample terms)"},
             {"t": "trace", "k": "read", "s": "TMT", "h": "Evidence: install", "d": "RO 7714 · Mar 4, 2026 · 271,900 mi · DPF part number on file"},
             {"t": "trace", "k": "read", "s": "Telematics", "h": "Evidence: failure", "d": "Odometer 317,950 at failure · SPN 3251 onset Sep 2 · derate Sep 29 21:14"},
             {"t": "trace", "k": "act", "s": "Email", "h": "Keep the failed part", "d": "Asked KC Interstate to hold the removed DPF 30 days and send photos"},
-            {"t": "trace", "k": "think", "s": "Agent", "h": "What to claim", "d": "Part + standard labour matches the terms · road-call fee is arguable · KC’s 4.0 h would contradict our own correction"},
+            {"t": "trace", "k": "think", "s": "Agent", "h": "What to claim", "d": "Part + standard labor matches the terms · road-call fee is arguable · KC’s 5.5 h would contradict our own correction"},
             {"t": "trace", "k": "policy", "s": "Rule", "h": "Who approves", "d": "Only the maintenance manager submits warranty claims"},
             {"t": "msg", "ch": "fleet-ops", "time": "08:43", "b": {
                 "title": "Warranty claim ready: Unit 214 DPF against Hoosier Diesel",
                 "context": [["Installed Mar 4 at 271,900 mi (RO 7714), failed Sep 29 at 317,950 mi: 7 months, 46,050 mi", "TMT + telematics"],
-                            ["Terms: 12 months, parts plus labour at standard time", "KB"],
+                            ["Terms: 12 months, parts plus labor at standard time", "KB"],
                             ["Evidence pack: both ROs, odometer readings, fault history; KC photos requested", "Harness"]],
-                "options": [["Part + standard labour", "Matches the terms exactly", "Leaves the road-call fee", "$3,298.00"],
+                "options": [["Part + standard labor", "Matches the terms exactly", "Leaves the road-call fee", "$3,298.00"],
                             ["Add the road-call fee", "Their part caused the call-out", "May be contested", "$3,693.00"],
-                            ["Claim KC’s 4.0 h", "Higher amount", "Contradicts our own correction to KC", "Not advised"]],
+                            ["Claim KC’s 5.5 h", "Higher amount", "Contradicts our own correction to KC", "Not advised"]],
                 "rec": 0,
-                "recommendation": "**Part + standard labour.** It is the claim least likely to be pushed back.",
+                "recommendation": "**Part + standard labor.** It is the claim least likely to be pushed back.",
                 "approval": ["you", "only the manager submits claims"],
-                "quote": {"h": "Draft to warranty@hoosierdiesel.example", "body": "The DPF assembly you installed on Unit 214 on Mar 4, 2026 (RO 7714, 271,900 mi) failed on Sep 29 at 317,950 mi, inside your 12-month parts warranty. We claim the replacement part, $2,950.00, and 2.4 h standard labour, $348.00. Total $3,298.00. Evidence attached; the failed unit is held for inspection."}}},
+                "quote": {"h": "Draft to warranty@hoosierdiesel.example", "body": "The DPF assembly you installed on Unit 214 on Mar 4, 2026 (RO 7714, 271,900 mi) failed on Sep 29 at 317,950 mi, inside your 12-month parts warranty. We claim the replacement part, $2,950.00, and 2.4 h standard labor, $348.00. Total $3,298.00. Evidence attached; the failed unit is held for inspection."}}},
             {"t": "choice", "ch": "fleet-ops", "approver": "you", "opts": [
                 {"label": "Submit $3,298", "btn": True, "primary": True, "then": [{"t": "set", "k": "claim", "v": 3298.0}]},
                 {"label": "Submit $3,693", "btn": True, "then": [{"t": "set", "k": "claim", "v": 3693.0}]},
-                {"label": "Claim the full 4 h KC billed. Hoosier caused this.", "who": "you", "then": [
-                    {"t": "trace", "k": "think", "s": "Agent", "h": "Consistency check", "d": "We told KC 4.0 h is too much. Claiming it from Hoosier undermines both."},
-                    {"t": "msg", "ch": "fleet-ops", "time": "08:45", "b": {"text": "I’d advise against that. We’ve just told KC that 4.0 h is too much, so claiming 4.0 h from Hoosier weakens both cases. The stronger version is standard labour plus the **$395.00 road-call fee: $3,693.00**.",
+                {"label": "Claim the full 5.5 h KC billed. Hoosier caused this.", "who": "you", "then": [
+                    {"t": "trace", "k": "think", "s": "Agent", "h": "Consistency check", "d": "We told KC 5.5 h is too much. Claiming it from Hoosier undermines both."},
+                    {"t": "msg", "ch": "fleet-ops", "time": "08:45", "b": {"text": "I’d advise against that. We’ve just told KC that 5.5 h is too much, so claiming 5.5 h from Hoosier weakens both cases. The stronger version is standard labor plus the **$395.00 road-call fee: $3,693.00**.",
                                                                      "approval": ["you", "only the manager submits claims"]}},
                     {"t": "choice", "ch": "fleet-ops", "approver": "you", "opts": [
                         {"label": "Submit $3,693", "btn": True, "primary": True, "then": [{"t": "set", "k": "claim", "v": 3693.0}]},
@@ -362,7 +362,7 @@ SCENES = [
         "id": "follow", "agent": "auditor", "when": "Fri 09:00", "name": "Follow-up",
         "case": "CASE-1043", "case_title": "INV-20931 · KC Interstate Diesel · follow-up", "opened": "Wed 08:31",
         "today": "Problems get spotted, but nobody chases them to the end.",
-        "insight": "The vendor hasn’t replied, and has billed labour above standard on 6 of 9 invoices this quarter.",
+        "insight": "The vendor hasn’t replied, and has billed labor above standard on 6 of 9 invoices this quarter.",
         "action": "Sent the reminder on its own under the 48-hour rule, checked the corrected bill, asked for the payment release, and suggested a rule from the pattern.",
         "governed": "48-hour follow-up rule (no approval needed) · payment released only on approval · new rules only when the manager agrees",
         "outcome": "Vendor accepted the correction, payment released, and a new rule proposed from the pattern, all visible in one thread.",
@@ -392,18 +392,18 @@ SCENES = [
             {"t": "choice", "ch": "fleet-ops", "approver": "you", "opts": [{"label": "Approve release", "btn": True, "primary": True, "then": []}]},
             {"t": "trace", "k": "act", "s": "AP", "h": "Release hold", "d": lambda S: "INV-20931-R1 released for payment · " + money(4860 - S["dispute"])},
             {"t": "tally", "k": "saved", "add_key": "dispute"},
-            {"t": "trace", "k": "read", "s": "TMT", "h": "Vendor history · KC Interstate", "d": "9 invoices this quarter · 6 billed labour above standard · $1,920.00 over in total"},
+            {"t": "trace", "k": "read", "s": "TMT", "h": "Vendor history · KC Interstate", "d": "9 invoices this quarter · 6 billed labor above standard · $1,920.00 over in total"},
             {"t": "trace", "k": "think", "s": "Agent", "h": "Pattern", "d": "KC is over standard on 6 of 9 invoices · usual gap 1–2 h"},
             {"t": "msg", "ch": "fleet-ops", "time": "14:25", "b": {
                 "title": "Pattern worth a rule",
-                "context": [["KC Interstate billed labour above standard on 6 of 9 invoices this quarter, $1,920.00 in total", "TMT"]],
+                "context": [["KC Interstate billed labor above standard on 6 of 9 invoices this quarter, $1,920.00 in total", "TMT"]],
                 "options": [["Add a rule", "Stops it before the bill", "KC needs to call for jobs over 3 h", "Saves about $1,900 a quarter"],
                             ["Keep checking after the fact", "No change for KC", "Same corrections every month", "Agent time only"]],
                 "rec": 0,
-                "recommendation": "**Add the rule:** KC must get approval before billing more than 3 h of labour, and I audit all their labour lines.",
+                "recommendation": "**Add the rule:** KC must get approval before billing more than 3 h of labor, and I audit all their labor lines.",
                 "approval": ["you", "new rules need the manager"]}},
             {"t": "choice", "ch": "fleet-ops", "approver": "you", "opts": [
-                {"label": "Add rule", "btn": True, "primary": True, "then": [{"t": "trace", "k": "policy", "s": "Rule", "h": "Rule added to the knowledge base", "d": "KC Interstate: pre-approval above 3.0 h labour · audit all labour lines"}]},
+                {"label": "Add rule", "btn": True, "primary": True, "then": [{"t": "trace", "k": "policy", "s": "Rule", "h": "Rule added to the knowledge base", "d": "KC Interstate: pre-approval above 3.0 h labor · audit all labor lines"}]},
                 {"label": "Not now", "btn": True, "then": []},
             ]},
             {"t": "tally", "k": "minutes", "add": 15},
@@ -511,7 +511,7 @@ ACTORS = {
     "warranty": [("You", "Maintenance Manager", "Slack · approves"), ("Luis", "Technician", "Slack · keeps the part"),
                  ("Hoosier Diesel Repair", "Original installer", "Email"), ("FleetProfit Agent", "Runs the case", "Slack + tools")],
     "plan": [("Dana", "Dispatch", "Slack · approves the hold"), ("Joel", "Shop lead", "Slack · approves the plan"),
-             ("Drivers", "Units 214, 152, 109", "Driver app"), ("Platte Valley Tire", "Parts vendor", "Purchase order"),
+             ("Drivers", "Units 214, 152, 187, 109", "Driver app"), ("Platte Valley Tire", "Parts vendor", "Purchase order"),
              ("FleetProfit Agent", "Runs the plan", "Slack + tools")],
     "follow": [("You", "Maintenance Manager", "Slack · approves"), ("Accounts payable", "AP team", "AP system"),
                ("KC Interstate Diesel", "Repair vendor", "Email"), ("FleetProfit Agent", "Runs the case", "Slack + tools")],
@@ -554,7 +554,7 @@ CSS = """
 .fp-step span{font-size:13px;opacity:.8;line-height:1.4;display:block}
 @media (max-width:900px){.fp-flow{grid-template-columns:minmax(0,1fr)}.sk{grid-template-columns:minmax(0,1fr)!important}.sk-side{display:none}}
 /* Slack-style window: a deliberate fixed light look */
-.sk{border:1px solid #d6d3cc;border-radius:10px;overflow:hidden;display:grid;grid-template-columns:190px minmax(0,1fr);
+.sk{border:1px solid #d6d3cc;border-radius:10px;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr);
   height:720px;background:#ffffff;color:#1d1c1d;font-family:"Lato","Helvetica Neue",Arial,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.06)}
 .sk-side{background:#073732;color:#d5e2de;padding:12px 8px;font-size:14px;overflow:auto}
 .sk-ws{font-weight:800;color:#fff;font-size:16px;padding:0 8px 2px}
@@ -730,20 +730,11 @@ def _window(items, scene, clock, status, typing=False, pending=None):
             if not it["btn"]:
                 msgs.append({"ch": it["ch"], "who": it["who"], "time": it.get("time", ""), "text": it["label"], "b": None, "agent": ""})
     if pending:
-        btns = [o for o in pending["opts"] if o.get("btn")]
         for m in reversed(msgs):
             if not m["who"]:
                 m.pop("chosen", None)
-                if btns:
-                    m["buttons"] = btns
                 break
     actors = ACTORS[scene["id"]]
-    chans = ('<div class="sk-ch on"><span># fleet-ops</span></div>'
-             '<div class="sk-ch dim"><span># general</span></div><div class="sk-ch dim"><span># safety</span></div>')
-    dms = "".join(f'<div class="sk-ch"><span><span class="sk-dot"></span>{n}</span></div>' for n in ["Dana · Dispatch", "Joel · Shop lead", "Luis · Technician"])
-    side = (f'<div class="sk-side"><div class="sk-ws">Demo Fleet</div><div class="sk-wsub">{_h(clock)}</div>'
-            f'<div class="sk-sec">Channels</div>{chans}<div class="sk-sec">Direct messages</div>{dms}'
-            f'<div class="sk-sec">Apps</div><div class="sk-ch"><span><span class="sk-dot" style="background:#C7873A"></span>FleetProfit Agent</span></div></div>')
     pill_cls = {"wait": "wait", "work": "work", "ok": "ok"}[status[0]]
     case = (f'<div class="sk-case"><b>{_h(scene["case"])}</b><span>{_h(scene["case_title"])}</span>'
             f'<span class="sk-pill {pill_cls}">{_h(status[1])}</span>'
@@ -753,10 +744,10 @@ def _window(items, scene, clock, status, typing=False, pending=None):
     if not msgs:
         body = '<div class="sk-ctx" style="padding:16px">The FleetProfit Agent is gathering context…</div>'
     typing_txt = "FleetProfit Agent is typing…" if typing else ""
-    main = (f'<div class="sk-main"><div class="sk-head"><b># fleet-ops</b><span>FleetProfit Agent runs every case here</span></div>'
+    main = (f'<div class="sk-main"><div class="sk-head"><b># fleet-ops</b><span>Demo Fleet · FleetProfit Agent runs every case here</span></div>'
             f'{case}<div class="sk-msgs"><div>{body}</div></div><div class="sk-typing">{typing_txt}</div>'
             f'<div class="sk-comp"><div class="sk-box">Message #fleet-ops</div></div></div>')
-    return f'<div class="sk">{side}{main}</div>'
+    return f'<div class="sk">{main}</div>'
 
 
 # ---------------------------------------------------------------- state
@@ -768,6 +759,7 @@ def _init():
     ss.setdefault(KEY + "shown", 0)
     ss.setdefault(KEY + "animate", True)
     ss.setdefault(KEY + "speed", "Normal")
+    ss.setdefault(KEY + "hood", False)
 
 
 def _go(i):
@@ -803,6 +795,7 @@ def _sidebar(scene_idx, started):
         st.markdown('<div class="fp-head">Presenter</div>', unsafe_allow_html=True)
         st.toggle("Animate in real time", key=KEY + "animate")
         st.select_slider("Speed", ["Slow", "Normal", "Fast"], key=KEY + "speed")
+        st.toggle("Show “Under the hood” beside the chat", key=KEY + "hood")
         st.markdown('<div class="fp-head">Connected through the harness (sample)</div>', unsafe_allow_html=True)
         st.markdown("".join(f'<span class="fp-chip">{html.escape(s)}</span>' for s in SYSTEMS), unsafe_allow_html=True)
 
@@ -818,7 +811,7 @@ def _intro():
     st.markdown('<div class="fp-head">How it works</div>', unsafe_allow_html=True)
     steps = [
         ("1 · Trigger", "Something happens", "A fault code, an invoice email, a new repair order or a daily schedule opens a case."),
-        ("2 · Knowledge base", "Context", "Fleet history, warranty terms, vendor records, labour standards and your approval rules."),
+        ("2 · Knowledge base", "Context", "Fleet history, warranty terms, vendor records, labor standards and your approval rules."),
         ("3 · Agent", "Options and a recommendation", "Weighs the options with their trade-offs and recommends one, with the reasoning shown."),
         ("4 · Harness", "Connects the tools", "Reads and acts in TMT, telematics, the TMS, email and AP through approved tools, with permissions and an audit log."),
         ("5 · Slack", "Approve and inform", "Only the right approver is asked. Everyone else is looped in. The agent acts and closes the case."),
@@ -869,11 +862,19 @@ def render():
         f'<div class="fp-actor{" agent" if a[0] == "FleetProfit Agent" else ""}"><b>{_h(a[0])}</b><span>{_h(a[1])} · {_h(a[2])}</span></div>'
         for a in ACTORS[sc["id"]]) + "</div>", unsafe_allow_html=True)
 
-    left, right = st.columns([7, 4], gap="large")
-    with left:
+    if idx > 0:
+        st.caption("Earlier scenes in the week are replayed with the recommended choices, so totals carry over.")
+    if ss[KEY + "hood"]:
+        left, right = st.columns([5, 2], gap="large")
+        with left:
+            win_ph = st.empty()
+            resp = st.container()
+        hood = right.container()
+    else:
         win_ph = st.empty()
         resp = st.container()
-    with right:
+        hood = st.expander("Under the hood · what the agent did, step by step, and the tools it called")
+    with hood:
         st.markdown('<div class="fp-head">Under the hood · what the agent is doing</div>', unsafe_allow_html=True)
         run_ph = st.empty()
         st.markdown('<div class="fp-head">Harness · tools it called</div>', unsafe_allow_html=True)
