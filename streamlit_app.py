@@ -376,41 +376,148 @@ def build(scene_idx, choices):
 
 
 # ============================== UI ==============================
-
-
+import re
 
 KEY = "fp_"  # session_state prefix, so this page can sit inside a bigger app
 
 KINDS = {
     "trigger": ("Trigger", "#C7873A"),
-    "read": ("Read", "#3F7FA6"),
-    "think": ("Reason", "#7A5EA8"),
-    "policy": ("Rule", "#A8660F"),
-    "act": ("Act", "#2F7A4F"),
-    "wait": ("Wait", "#8A8F88"),
+    "read": ("Tool call", "#3F7FA6"),
+    "think": ("Reasoning", "#7A5EA8"),
+    "policy": ("Rule check", "#A8660F"),
+    "act": ("Action", "#2F7A4F"),
+    "wait": ("Waiting", "#8A8F88"),
     "done": ("Done", "#2F7A4F"),
+}
+KB_SOURCES = {"Warranty", "Rule", "Log"}
+COLORS = {"you": "#8A5A1E", "dana": "#3F6FA0", "joel": "#6B4F9A", "luis": "#2F7A4F"}
+INITIALS = {"you": "MM", "dana": "DK", "joel": "JP", "luis": "LR"}
+CHANNELS = ["road-calls", "invoices", "warranty", "shop", "shop-plan", "dispatch"]
+
+SCENE_EXTRA = {
+    "breakdown": {
+        "ch": "road-calls",
+        "actors": [("You", "Maintenance Manager", "Slack"), ("R. Alvarez", "Driver", "Driver app"),
+                   ("KC Interstate Diesel", "Mobile repair vendor", "Phone + email"), ("Freightliner dealer", "OEM dealer", "Email"),
+                   ("FleetProfit", "Breakdown Desk agent", "Slack + tools")],
+        "knowledge": ["Unit 214 history: DPF replaced Mar 4 by Hoosier Diesel", "Vendor parts warranty: Hoosier Diesel, 12 months",
+                      "Approval rule: road calls over $1,500 need the manager", "Preferred shops and dealers near I-29 / I-80",
+                      "Load 48213 appointment: Lincoln NE, Wed 10:00"],
+    },
+    "invoice": {
+        "ch": "invoices",
+        "actors": [("You", "Maintenance Manager", "Slack"), ("KC Interstate Diesel", "Repair vendor", "Email"),
+                   ("Accounts payable", "AP team", "AP system"), ("FleetProfit", "Invoice Auditor agent", "Slack + tools")],
+        "knowledge": ["Spend approved on road call RC-2291 (up to $4,500)", "Fleet labour standards: DD15 regen 1.0 h, DPF R&R 2.4 h",
+                      "Vendor history: KC Interstate, 9 invoices this quarter", "Invoice rule: findings over $100 hold payment",
+                      "Warranty status of parts replaced on Unit 214"],
+    },
+    "warranty": {
+        "ch": "warranty",
+        "actors": [("You", "Maintenance Manager", "Slack"), ("Luis", "Technician", "Slack #shop"),
+                   ("Hoosier Diesel Repair", "Original installer", "Email"), ("FleetProfit", "Warranty Capture agent", "Slack + tools")],
+        "knowledge": ["Warranty terms: Hoosier parts 12 months (sample)", "Engine warranty: 2 years / 250,000 mi (sample)",
+                      "Claim evidence checklist: ROs, odometer, fault history, photos", "Filing window: 30 days from failure (sample)",
+                      "Rule: only the manager submits claims"],
+    },
+    "plan": {
+        "ch": "dispatch",
+        "actors": [("Dana", "Dispatcher", "Slack #dispatch"), ("Joel", "Shop lead", "Slack #shop-plan"),
+                   ("Drivers", "Units 214, 152, 109", "Driver app"), ("Platte Valley Tire", "Parts vendor", "Purchase order"),
+                   ("FleetProfit", "Shop Planner agent", "Slack + tools")],
+        "knowledge": ["PM intervals: PM-A and PM-B by mileage", "Out-of-service criteria: brakes, steer tread 4/32 in",
+                      "Shop bays and shifts, Grand Island", "Parts auto-approve limit for purchase orders",
+                      "Rule: holding a truck past a pickup needs dispatch"],
+    },
+    "follow": {
+        "ch": "invoices",
+        "actors": [("You", "Maintenance Manager", "Slack"), ("KC Interstate Diesel", "Repair vendor", "Email"),
+                   ("Accounts payable", "AP team", "AP system"), ("FleetProfit", "Invoice Auditor agent", "Slack + tools")],
+        "knowledge": ["Follow-up rule: nudge a vendor after 48 h", "Payment terms: INV-20931 due Oct 14",
+                      "Vendor scorecard: KC over standard on 6 of 9 invoices", "Rule changes need the manager’s approval"],
+    },
 }
 
 CSS = """
 <style>
-.fp-trace{border:1px solid rgba(128,128,128,.28);border-left:4px solid var(--c);border-radius:8px;
-  padding:7px 10px;margin:0 0 7px 0;background:rgba(128,128,128,.04)}
-.fp-trace .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.fp-trace .k{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--c)}
-.fp-trace .s{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;border:1px solid rgba(128,128,128,.45);
-  border-radius:4px;padding:0 5px}
-.fp-trace .h{font-weight:700;font-size:13.5px}
-.fp-trace .d{font-family:ui-monospace,Menlo,monospace;font-size:12px;opacity:.85;margin-top:3px;line-height:1.45}
-.fp-trace.run .h::after{content:"";display:inline-block;width:10px;height:10px;margin-left:7px;vertical-align:-1px;
-  border:2px solid rgba(128,128,128,.4);border-top-color:#C7873A;border-radius:50%;animation:fpspin .7s linear infinite}
-@keyframes fpspin{to{transform:rotate(360deg)}}
+.fp-eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:#C7873A}
 .fp-head{font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;opacity:.65;margin:10px 0 6px}
 .fp-clock{display:inline-block;font-family:ui-monospace,Menlo,monospace;font-weight:600;font-size:14px;
   background:#073732;color:#F8F6F3;border-radius:8px;padding:6px 12px}
 .fp-chip{display:inline-block;font-family:ui-monospace,Menlo,monospace;font-size:11px;border:1px solid rgba(128,128,128,.45);
   border-radius:4px;padding:1px 6px;margin:0 4px 4px 0}
-.fp-eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:#C7873A}
-.fp-wait{border:1px dashed #A8660F;border-radius:8px;padding:8px 10px;font-weight:600;font-size:13px;color:#A8660F;margin-top:4px}
+.fp-actors{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px}
+.fp-actor{border:1px solid rgba(128,128,128,.3);border-radius:8px;padding:5px 10px;font-size:13px;line-height:1.3}
+.fp-actor b{display:block;font-size:13.5px}
+.fp-actor span{opacity:.7;font-size:12px}
+.fp-actor.agent{border-color:#C7873A;background:rgba(199,135,58,.08)}
+.fp-trace{border:1px solid rgba(128,128,128,.28);border-left:4px solid var(--c);border-radius:8px;
+  padding:6px 10px;margin:0 0 6px 0;background:rgba(128,128,128,.04)}
+.fp-trace .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.fp-trace .k{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--c)}
+.fp-trace .s{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;border:1px solid rgba(128,128,128,.45);border-radius:4px;padding:0 5px}
+.fp-trace .h{font-weight:700;font-size:13px}
+.fp-trace .d{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;opacity:.85;margin-top:3px;line-height:1.45}
+.fp-trace.run .h::after{content:"";display:inline-block;width:10px;height:10px;margin-left:7px;vertical-align:-1px;
+  border:2px solid rgba(128,128,128,.4);border-top-color:#C7873A;border-radius:50%;animation:fpspin .7s linear infinite}
+@keyframes fpspin{to{transform:rotate(360deg)}}
+.fp-run{height:380px;overflow-y:auto;display:flex;flex-direction:column-reverse;padding-right:4px}
+.fp-ctx{font-size:13px;opacity:.7}
+.fp-kb{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+.fp-kb li{font-size:13px;border:1px solid rgba(128,128,128,.25);border-radius:6px;padding:5px 8px}
+.fp-kb li::before{content:"KB";font-family:ui-monospace,Menlo,monospace;font-size:10px;font-weight:700;color:#7A5EA8;
+  border:1px solid #7A5EA8;border-radius:3px;padding:0 3px;margin-right:7px}
+.fp-tools{display:flex;flex-wrap:wrap;gap:5px}
+.fp-tool{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;border-radius:5px;padding:2px 7px;
+  background:rgba(63,127,166,.12);border:1px solid rgba(63,127,166,.45)}
+.fp-tool.act{background:rgba(47,122,79,.12);border-color:rgba(47,122,79,.5)}
+.fp-wait{border:1px dashed #A8660F;border-radius:8px;padding:7px 10px;font-weight:600;font-size:13px;color:#A8660F;margin:4px 0}
+.fp-flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:6px 0 4px}
+.fp-step{border:1px solid rgba(128,128,128,.3);border-radius:10px;padding:12px}
+.fp-step .n{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#C7873A;font-weight:700}
+.fp-step b{display:block;margin:2px 0 4px;font-size:15px}
+.fp-step span{font-size:13px;opacity:.8;line-height:1.4;display:block}
+@media (max-width:900px){.fp-flow{grid-template-columns:minmax(0,1fr)}.sk{grid-template-columns:minmax(0,1fr)!important}.sk-side{display:none}}
+/* Slack-style window: a deliberate fixed light look */
+.sk{border:1px solid #d6d3cc;border-radius:10px;overflow:hidden;display:grid;grid-template-columns:200px minmax(0,1fr);
+  height:640px;background:#ffffff;color:#1d1c1d;font-family:"Lato","Helvetica Neue",Arial,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.sk-side{background:#073732;color:#d5e2de;padding:12px 8px;font-size:14px;overflow:auto}
+.sk-ws{font-weight:800;color:#fff;font-size:16px;padding:0 8px 2px}
+.sk-wsub{font-size:11.5px;color:#86a8a1;padding:0 8px 8px}
+.sk-sec{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#86a8a1;margin:12px 8px 4px}
+.sk-ch{padding:3px 8px;border-radius:5px;display:flex;justify-content:space-between;align-items:center}
+.sk-ch.on{background:#C7873A;color:#1d1408;font-weight:700}
+.sk-ch.unread{color:#fff;font-weight:700}
+.sk-badge{background:#e8c27f;color:#1d1408;border-radius:9px;padding:0 6px;font-size:11px;font-weight:700}
+.sk-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#6fc493;margin-right:7px}
+.sk-main{display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;min-width:0;min-height:0}
+.sk-head{padding:10px 16px;border-bottom:1px solid #e8e8e8;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sk-head b{font-size:16px}
+.sk-head span{font-size:12px;color:#777}
+.sk-msgs{overflow-y:auto;display:flex;flex-direction:column-reverse;min-height:0}
+.sk-m{display:grid;grid-template-columns:36px minmax(0,1fr);gap:10px;padding:7px 16px}
+.sk-m.new{background:#fff8ec}
+.sk-av{width:36px;height:36px;border-radius:7px;color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px}
+.sk-n{font-weight:800;font-size:15px}
+.sk-app{font-size:10px;font-weight:700;background:#ececec;color:#5f5f5f;border-radius:3px;padding:1px 4px;margin-left:5px;vertical-align:1px}
+.sk-t{font-size:12px;color:#888;margin-left:6px}
+.sk-body{font-size:14.5px;line-height:1.46}
+.sk-blk{border-left:4px solid #C7873A;padding:2px 0 2px 12px;margin-top:4px;font-size:14.5px;line-height:1.46}
+.sk-title{font-weight:800;margin-bottom:4px}
+.sk-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px 18px;margin:4px 0 6px}
+.sk-fields small{display:block;font-size:12px;font-weight:700;color:#616061}
+.sk-blk ul{margin:2px 0 4px;padding-left:18px}
+.sk-quote{background:#f8f8f8;border:1px solid #e3e3e3;border-radius:6px;padding:8px 10px;font-size:13px;white-space:pre-wrap;margin-top:6px}
+.sk-quote i{display:block;font-style:normal;font-size:11.5px;color:#777;margin-bottom:3px}
+.sk-ctx{font-size:12.5px;color:#777;margin-top:4px}
+.sk-btns{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.sk-btn{border:1px solid #c9c9c9;border-radius:5px;padding:3px 11px;font-size:13px;font-weight:700;color:#1d1c1d;background:#fff}
+.sk-btn.p{background:#0E6D62;border-color:#0E6D62;color:#fff}
+.sk-chosen{font-size:12.5px;color:#2f7a4f;font-weight:700;margin-top:6px}
+.sk-typing{font-size:12.5px;color:#888;font-style:italic;padding:2px 16px 4px 62px;min-height:22px}
+.sk-comp{border-top:1px solid #ececec;padding:8px 14px 10px}
+.sk-box{border:1px solid #c9c9c9;border-radius:8px;padding:8px 12px;color:#999;font-size:14px}
+.sk-mention{background:#e8f3f1;color:#0E6D62;border-radius:3px;padding:0 2px;font-weight:700}
 </style>
 """
 
@@ -424,55 +531,106 @@ def _h(s):
     return html.escape(s or "").replace("$", "&#36;").replace("\n", "<br>")
 
 
+def _rich(s):
+    t = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", _h(s))
+    return re.sub(r"<b>(@\w+)</b>", r'<span class="sk-mention">\1</span>', t)
+
+
+def _tool_label(t):
+    if t["k"] == "trigger":
+        return t["s"] + " event"
+    if t["k"] in ("think", "done") or t["s"] == "Agent":
+        return "agent"
+    if t["k"] == "policy" or t["s"] in KB_SOURCES:
+        return "knowledge base"
+    return t["s"].lower().replace(" ", "_") + "." + re.sub(r"[^a-z0-9]+", "_", t["h"].lower()).strip("_")
+
+
 def _trace_html(t, running=False):
     label, color = KINDS[t["k"]]
     return (f'<div class="fp-trace{" run" if running else ""}" style="--c:{color}"><div class="row">'
-            f'<span class="k">{label}</span><span class="s">{_h(t["s"])}</span><span class="h">{_h(t["h"])}</span></div>'
+            f'<span class="k">{label}</span><span class="s">{_h(_tool_label(t))}</span><span class="h">{_h(t["h"])}</span></div>'
             f'<div class="d">{_h(t["d"])}</div></div>')
 
 
-def _render_block(b):
+def _block_html(b):
+    out = ['<div class="sk-blk">' if (b.get("title") or b.get("fields") or b.get("list") or b.get("quote")) else '<div class="sk-body">']
     if b.get("title"):
-        st.markdown(f"**{_md(b['title'])}**")
-    fields = b.get("fields") or []
-    for i in range(0, len(fields), 2):
-        cols = st.columns(2)
-        for col, f in zip(cols, fields[i:i + 2]):
-            with col:
-                st.caption(f[0])
-                st.markdown(_md(f[1]))
+        out.append(f'<div class="sk-title">{_rich(b["title"])}</div>')
+    if b.get("fields"):
+        out.append('<div class="sk-fields">' + "".join(f"<div><small>{_h(k)}</small>{_rich(v)}</div>" for k, v in b["fields"]) + "</div>")
     if b.get("list"):
-        st.markdown("\n".join(f"- {_md(x)}" for x in b["list"]))
+        out.append("<ul>" + "".join(f"<li>{_rich(x)}</li>" for x in b["list"]) + "</ul>")
     if b.get("text"):
-        st.markdown(_md(b["text"]))
+        out.append(f"<div>{_rich(b['text'])}</div>")
     if b.get("quote"):
-        st.caption(b["quote"]["h"])
-        st.code(b["quote"]["body"], language=None, wrap_lines=True)
+        out.append(f'<div class="sk-quote"><i>{_h(b["quote"]["h"])}</i>{_h(b["quote"]["body"])}</div>')
     if b.get("ctx"):
-        st.caption(_md(b["ctx"]))
+        out.append(f'<div class="sk-ctx">{_rich(b["ctx"])}</div>')
+    out.append("</div>")
+    return "".join(out)
 
 
-def _render_msg(m):
+def _msg_html(m, newest=False):
     if m["who"]:
         name, role = PEOPLE[m["who"]]
-        with st.chat_message("user", avatar=":material/person:"):
-            st.markdown(f"**{name}** · {role} · :green[#{m['ch']}] · {m['time']}")
-            st.markdown(_md(m["text"]))
+        av = f'<div class="sk-av" style="background:{COLORS[m["who"]]}">{INITIALS[m["who"]]}</div>'
+        head = f'<span class="sk-n">{_h(name)}</span><span class="sk-t">{_h(role)} · {m["time"]}</span>'
+        body = f'<div class="sk-body">{_rich(m["text"])}</div>'
     else:
-        with st.chat_message("assistant", avatar=":material/smart_toy:"):
-            st.markdown(f"**FleetProfit** · {m['agent']} · :green[#{m['ch']}] · {m['time']}")
-            _render_block(m["b"] or {})
+        av = '<div class="sk-av" style="background:#073732">FP</div>'
+        head = f'<span class="sk-n">FleetProfit</span><span class="sk-app">APP</span><span class="sk-t">{_h(m["agent"])} · {m["time"]}</span>'
+        body = _block_html(m["b"] or {})
+    extra = ""
+    if m.get("buttons"):
+        extra += '<div class="sk-btns">' + "".join(
+            f'<span class="sk-btn{" p" if o.get("primary") else ""}">{_h(o["label"])}</span>' for o in m["buttons"]) + "</div>"
+    if m.get("chosen"):
+        extra += f'<div class="sk-chosen">✓ {_h(m["chosen"][0])} clicked “{_h(m["chosen"][1])}”</div>'
+    return f'<div class="sk-m{" new" if newest else ""}">{av}<div style="min-width:0"><div>{head}</div>{body}{extra}</div></div>'
 
 
-def _render_choice(c):
-    if c["btn"]:
-        name = PEOPLE[c["who"]][0]
-        st.caption(f"✓ {name} chose “{c['label']}”")
-    else:
-        name, role = PEOPLE[c["who"]]
-        with st.chat_message("user", avatar=":material/person:"):
-            st.markdown(f"**{name}** · {role} · :green[#{c['ch']}]")
-            st.markdown(_md(c["label"]))
+def _window(items, default_ch, clock, typing_ch=None, pending=None, members=""):
+    msgs = []
+    for kind, it in items:
+        if kind == "msg":
+            msgs.append(dict(it))
+        elif kind == "choice":
+            if it["btn"]:
+                for m in reversed(msgs):
+                    if not m["who"] and m["ch"] == it["ch"]:
+                        m["chosen"] = (PEOPLE[it["who"]][0], it["label"])
+                        break
+            else:
+                msgs.append({"ch": it["ch"], "who": it["who"], "time": it.get("time", ""), "text": it["label"], "b": None, "agent": ""})
+    if pending:
+        btns = [o for o in pending["opts"] if o.get("btn")]
+        for m in reversed(msgs):
+            if not m["who"] and m["ch"] == pending["ch"]:
+                if btns:
+                    m["buttons"] = btns
+                break
+    active = typing_ch or (msgs[-1]["ch"] if msgs else (pending["ch"] if pending else default_ch))
+    unread = {}
+    for m in msgs:
+        if m["ch"] != active:
+            unread[m["ch"]] = unread.get(m["ch"], 0) + 1
+    chans = "".join(
+        f'<div class="sk-ch{" on" if c == active else (" unread" if unread.get(c) else "")}"><span># {c}</span>'
+        + (f'<span class="sk-badge">{unread[c]}</span>' if unread.get(c) and c != active else "") + "</div>" for c in CHANNELS)
+    dms = "".join(f'<div class="sk-ch"><span><span class="sk-dot"></span>{n}</span></div>' for n in ["Dana · Dispatch", "Joel · Shop lead", "Luis · Technician"])
+    side = (f'<div class="sk-side"><div class="sk-ws">Demo Fleet</div><div class="sk-wsub">{_h(clock)}</div>'
+            f'<div class="sk-sec">Channels</div>{chans}<div class="sk-sec">Direct messages</div>{dms}'
+            f'<div class="sk-sec">Apps</div><div class="sk-ch on" style="background:transparent;color:#fff"><span><span class="sk-dot" style="background:#C7873A"></span>FleetProfit</span></div></div>')
+    shown = [m for m in msgs if m["ch"] == active]
+    body = "".join(_msg_html(m, newest=(i == len(shown) - 1)) for i, m in enumerate(shown))
+    if not shown:
+        body = '<div class="sk-ctx" style="padding:16px">No new messages yet.</div>'
+    typing = "FleetProfit is typing…" if typing_ch else ""
+    main = (f'<div class="sk-main"><div class="sk-head"><b># {active}</b><span>{_h(members)}</span></div>'
+            f'<div class="sk-msgs"><div>{body}</div></div><div class="sk-typing">{typing}</div>'
+            f'<div class="sk-comp"><div class="sk-box">Message #{active}</div></div></div>')
+    return f'<div class="sk">{side}{main}</div>'
 
 
 # ---------------------------------------------------------------- state
@@ -510,15 +668,16 @@ def _sidebar(scene_idx, started):
         st.markdown('<span class="fp-eyebrow">Sample data</span>', unsafe_allow_html=True)
         st.caption("Demo fleet shaped like a regional flatbed carrier: 70 tractors, 204 trailers, based in Nebraska.")
         st.markdown('<div class="fp-head">The week, one truck</div>', unsafe_allow_html=True)
+        st.button("How it works", key=KEY + "home", on_click=_restart, use_container_width=True,
+                  type="primary" if not started else "secondary")
         for i, sc in enumerate(SCENES):
             current = started and i == scene_idx
             st.button(f"{i + 1}. {sc['when']} · {AGENTS[sc['agent']]}", key=f"{KEY}nav{i}", on_click=_go, args=(i,),
                       type="primary" if current else "secondary", use_container_width=True)
         st.markdown('<div class="fp-head">Presenter</div>', unsafe_allow_html=True)
-        st.toggle("Animate agent steps", key=KEY + "animate")
+        st.toggle("Animate in real time", key=KEY + "animate")
         st.select_slider("Speed", ["Slow", "Normal", "Fast"], key=KEY + "speed")
-        st.button("Restart", key=KEY + "restart", on_click=_restart, use_container_width=True)
-        st.markdown('<div class="fp-head">Connected (sample)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="fp-head">Connected through the harness (sample)</div>', unsafe_allow_html=True)
         st.markdown("".join(f'<span class="fp-chip">{html.escape(s)}</span>' for s in SYSTEMS), unsafe_allow_html=True)
 
 
@@ -530,20 +689,31 @@ def _intro():
         "Agents watch your maintenance, telematics and dispatch data all the time. They bring what matters to your "
         "team in Slack as a clear insight with the next step ready to approve. Your rules and your fleet’s history "
         "guide every action, and your people stay in control.")
-    p1, p2, p3 = st.columns(3)
-    with p1.container(border=True):
-        st.markdown("**Insight, ready to act on**")
-        st.caption("Each finding arrives with the work already drafted: the claim, the dispute, the schedule.")
-    with p2.container(border=True):
-        st.markdown("**Continuous**")
-        st.caption("Agents work all the time, set off by a fault code, an invoice or a new repair order.")
-    with p3.container(border=True):
-        st.markdown("**Governed**")
-        st.caption("Every action follows your rules and your fleet’s knowledge, with an approval trail.")
+    st.markdown('<div class="fp-head">How it works</div>', unsafe_allow_html=True)
+    steps = [
+        ("1 · Trigger", "Something happens", "A fault code, an invoice email, a new repair order or a daily schedule starts an agent."),
+        ("2 · Knowledge base", "Context", "Fleet history, warranty terms, vendor records, labour standards and your approval rules."),
+        ("3 · Agent", "Decides what matters", "Reasons over the data and the context, and works out the next step."),
+        ("4 · Harness", "Connects the tools", "Reads and acts in TMT, telematics, the TMS, email and AP through approved tools, with permissions and an audit log."),
+        ("5 · Slack", "People decide", "The insight arrives with the action drafted. People approve or push back in plain words; the agent acts and logs it."),
+    ]
+    st.markdown('<div class="fp-flow">' + "".join(
+        f'<div class="fp-step"><div class="n">{a}</div><b>{b}</b><span>{_h(c)}</span></div>' for a, b, c in steps) + "</div>",
+        unsafe_allow_html=True)
+    st.markdown('<div class="fp-head">Who is involved</div>', unsafe_allow_html=True)
+    st.markdown(
+        "| Who | Role | Where they meet the agent |\n|---|---|---|\n"
+        "| You | Maintenance manager | Slack: approves road calls, invoices, claims and new rules |\n"
+        "| Dana | Dispatcher | Slack #dispatch: agrees when trucks can come in |\n"
+        "| Joel | Shop lead | Slack #shop-plan: approves the day’s plan |\n"
+        "| Luis | Technician | Slack #shop: told to keep parts that are under warranty |\n"
+        "| Drivers | Drivers | Driver app: told where to go and what to do |\n"
+        "| Vendors | Repair shops, parts suppliers | Email and purchase orders: disputes, claims, orders |\n"
+        "| Accounts payable | AP team | AP system: payment holds and releases |\n"
+        "| FleetProfit agents | Breakdown Desk, Invoice Auditor, Warranty Capture, Shop Planner | Post in Slack, call tools through the harness |")
+    st.markdown('<div class="fp-head">The week</div>', unsafe_allow_html=True)
     rows = "\n".join(f"| {sc['when']} | {AGENTS[sc['agent']]} | {_md(sc['insight'])} | {_md(sc['action'])} |" for sc in SCENES)
     st.markdown("| When | Agent | Insight | Action |\n|---|---|---|---|\n" + rows)
-    st.caption("On the right of each scene you see what the agent is doing as it works: what triggered it, "
-               "which system it read, how it reasoned, which rule applied, and what it did.")
     st.button("Start: Tuesday 21:14 breakdown", type="primary", on_click=_go, args=(0,))
 
 
@@ -558,67 +728,140 @@ def render():
         return
 
     sc = SCENES[idx]
+    ex = SCENE_EXTRA[sc["id"]]
     S, log, pending = build(idx, ss[KEY + "choices"])
     shown = ss[KEY + "shown"]
     animate = ss[KEY + "animate"]
     pace = {"Slow": 1.5, "Normal": 1.0, "Fast": 0.45}[ss[KEY + "speed"]]
+    members = "Members: " + ", ".join(a[0] for a in ex["actors"] if a[2].startswith("Slack"))
 
     # header
     h1, h2 = st.columns([4, 1])
     with h1:
-        st.markdown(f'<span class="fp-eyebrow">Scene {idx + 1} of {len(SCENES)} · {sc["when"]}</span>', unsafe_allow_html=True)
+        st.markdown(f'<span class="fp-eyebrow">Scene {idx + 1} of {len(SCENES)} · {sc["when"]} · live in Slack</span>', unsafe_allow_html=True)
         st.subheader(AGENTS[sc["agent"]])
     clock_ph = h2.empty()
-
-    s1, s2, s3 = st.columns(3)
-    with s1.container(border=True):
-        st.caption("INSIGHT")
-        st.markdown(_md(sc["insight"]))
-    with s2.container(border=True):
-        st.caption("ACTION")
-        st.markdown(_md(sc["action"]))
-    with s3.container(border=True):
-        st.caption("GOVERNED BY")
-        st.markdown(_md(sc["governed"]))
-    st.caption("Today, without the agent: " + _md(sc["today"]))
+    st.markdown('<div class="fp-actors">' + "".join(
+        f'<div class="fp-actor{" agent" if a[0] == "FleetProfit" else ""}"><b>{_h(a[0])}</b><span>{_h(a[1])} · {_h(a[2])}</span></div>'
+        for a in ex["actors"]) + "</div>", unsafe_allow_html=True)
 
     left, right = st.columns([3, 2], gap="large")
     with left:
-        st.markdown('<div class="fp-head">Slack / Teams</div>', unsafe_allow_html=True)
+        win_ph = st.empty()
+        resp = st.container()
     with right:
-        st.markdown(f'<div class="fp-head">How the agent got from data to action · {AGENTS[sc["agent"]]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="fp-head">What the agent is doing · {AGENTS[sc["agent"]]}</div>', unsafe_allow_html=True)
+        run_ph = st.empty()
+        st.markdown('<div class="fp-head">Knowledge base · context it used</div>', unsafe_allow_html=True)
+        st.markdown('<ul class="fp-kb">' + "".join(f"<li>{_h(k)}</li>" for k in ex["knowledge"]) + "</ul>", unsafe_allow_html=True)
+        st.markdown('<div class="fp-head">Harness · tools it called</div>', unsafe_allow_html=True)
+        tools_ph = st.empty()
 
-    # replay the log; animate only what is new since the last rerun
-    clock = "Tue Sep 29 · 21:00"
-    clock_ph.markdown(f'<div style="text-align:right"><span class="fp-clock">{clock}</span></div>', unsafe_allow_html=True)
+    items, tools, traces = [], [], []
+    state = {"clock": "Tue Sep 29 · 21:00"}
+
+    def draw(typing_ch=None, pend=None):
+        win_ph.markdown(_window(items, ex["ch"], state["clock"], typing_ch, pend, members), unsafe_allow_html=True)
+
+    def draw_clock():
+        clock_ph.markdown(f'<div style="text-align:right"><span class="fp-clock">{state["clock"]}</span></div>', unsafe_allow_html=True)
+
+    def draw_run(running=False, waiting=None):
+        rows = "".join(_trace_html(t, running=(running and j == len(traces) - 1)) for j, t in enumerate(traces))
+        if waiting:
+            rows += f'<div class="fp-wait">Waiting for a decision in #{waiting}</div>'
+        if not rows:
+            rows = '<div class="fp-ctx">Waiting for a trigger…</div>'
+        run_ph.markdown(f'<div class="fp-run"><div>{rows}</div></div>', unsafe_allow_html=True)
+
+    def draw_tools():
+        if not tools:
+            tools_ph.caption("No tools called yet.")
+        else:
+            tools_ph.markdown('<div class="fp-tools">' + "".join(
+                f'<span class="fp-tool{" act" if k == "act" else ""}">✓ {_h(n)}</span>' for n, k in tools) + "</div>", unsafe_allow_html=True)
+
+    draw_clock()
+    draw()
+    draw_tools()
+    draw_run()
     for i, (kind, item) in enumerate(log):
         fresh = animate and i >= shown
         if kind == "clock":
-            clock = item
-            clock_ph.markdown(f'<div style="text-align:right"><span class="fp-clock">{clock}</span></div>', unsafe_allow_html=True)
+            state["clock"] = item
+            draw_clock()
             if fresh:
-                time.sleep(0.3 * pace)
+                draw()
+                time.sleep(0.4 * pace)
         elif kind == "trace":
-            with right:
-                if fresh:
-                    ph = st.empty()
-                    ph.markdown(_trace_html(item, running=True), unsafe_allow_html=True)
-                    time.sleep((1.4 if item["slow"] else 0.9 if item["k"] == "think" else 0.55) * pace)
-                    ph.markdown(_trace_html(item), unsafe_allow_html=True)
-                else:
-                    st.markdown(_trace_html(item), unsafe_allow_html=True)
-        elif kind == "msg":
-            with left:
-                if fresh and not item["who"]:
-                    with st.spinner("FleetProfit is writing…"):
-                        time.sleep(0.6 * pace)
-                _render_msg(item)
+            traces.append(item)
             if fresh:
-                time.sleep(0.25 * pace)
+                draw_run(running=True)
+                time.sleep((1.4 if item["slow"] else 0.9 if item["k"] == "think" else 0.55) * pace)
+                draw_run()
+            if item["k"] in ("read", "act"):
+                name = _tool_label(item)
+                if name not in ("knowledge base", "agent") and (name, item["k"]) not in tools:
+                    tools.append((name, item["k"]))
+                    if fresh:
+                        draw_tools()
+        elif kind == "msg":
+            if fresh and not item["who"]:
+                draw(typing_ch=item["ch"])
+                time.sleep(0.9 * pace)
+            items.append(("msg", item))
+            if fresh:
+                draw()
+                time.sleep(0.4 * pace)
         elif kind == "choice":
-            with left:
-                _render_choice(item)
+            it = dict(item)
+            it["time"] = state["clock"].split("· ")[-1]
+            items.append(("choice", it))
+            if fresh:
+                draw()
     ss[KEY + "shown"] = len(log)
+    draw(pend=pending)
+    draw_tools()
+    draw_run(waiting=pending["ch"] if pending else None)
+
+    if pending:
+        with resp:
+            btns = [(i, o) for i, o in enumerate(pending["opts"]) if o.get("btn")]
+            replies = [(i, o) for i, o in enumerate(pending["opts"]) if not o.get("btn")]
+            if btns:
+                st.caption(f"Click a button on FleetProfit’s message in #{pending['ch']}")
+                cols = st.columns(len(btns))
+                for col, (i, o) in zip(cols, btns):
+                    col.button(o["label"], key=f"{KEY}b{idx}_{len(ss[KEY + 'choices'])}_{i}", on_click=_choose, args=(i,),
+                               type="primary" if o.get("primary") else "secondary", use_container_width=True)
+            for i, o in replies:
+                name, role = PEOPLE[o["who"]]
+                st.button(f"Reply in #{pending['ch']} as {name} ({role}): “{o['label']}”", key=f"{KEY}r{idx}_{len(ss[KEY + 'choices'])}_{i}",
+                          on_click=_choose, args=(i,), use_container_width=True)
+    else:
+        with resp:
+            with st.container(border=True):
+                st.markdown("**What just happened**")
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.caption("INSIGHT")
+                    st.markdown(_md(sc["insight"]))
+                with c2:
+                    st.caption("ACTION")
+                    st.markdown(_md(sc["action"]))
+                with c3:
+                    st.caption("GOVERNED BY")
+                    st.markdown(_md(sc["governed"]))
+                st.caption("Today, without the agent: " + _md(sc["today"]))
+                st.success(f"**Outcome:** {_md(sc['outcome'])}")
+            if idx + 1 < len(SCENES):
+                nx = SCENES[idx + 1]
+                st.button(f"Next: {nx['when']} · {AGENTS[nx['agent']]} →", type="primary", on_click=_go, args=(idx + 1,))
+            else:
+                with st.container(border=True):
+                    st.markdown("#### Where would turning insight into action make the biggest difference for you?")
+                    st.markdown("\n".join(f"- {q}" for q in DISCOVERY_QUESTIONS))
+                st.button("Play again from Tuesday", on_click=_go, args=(0,))
 
     # running totals
     t = S["tally"]
@@ -628,33 +871,6 @@ def render():
     m[1].metric("Warranty claimed", money(t["warranty"]))
     m[2].metric("Decisions in Slack", t["decisions"])
     m[3].metric("Admin time (est.)", "{:.1f} h".format(t["minutes"] / 60))
-
-    if pending:
-        with right:
-            st.markdown(f'<div class="fp-wait">Waiting for a decision in #{pending["ch"]}</div>', unsafe_allow_html=True)
-        with left:
-            btns = [(i, o) for i, o in enumerate(pending["opts"]) if o.get("btn")]
-            replies = [(i, o) for i, o in enumerate(pending["opts"]) if not o.get("btn")]
-            if btns:
-                cols = st.columns(len(btns))
-                for col, (i, o) in zip(cols, btns):
-                    col.button(o["label"], key=f"{KEY}b{idx}_{len(ss[KEY + 'choices'])}_{i}", on_click=_choose, args=(i,),
-                               type="primary" if o.get("primary") else "secondary", use_container_width=True)
-            for i, o in replies:
-                name, role = PEOPLE[o["who"]]
-                st.button(f"Reply as {name} ({role}): “{o['label']}”", key=f"{KEY}r{idx}_{len(ss[KEY + 'choices'])}_{i}",
-                          on_click=_choose, args=(i,), use_container_width=True)
-    else:
-        with left:
-            st.success(f"**Outcome:** {_md(sc['outcome'])}")
-            if idx + 1 < len(SCENES):
-                nx = SCENES[idx + 1]
-                st.button(f"Next: {nx['when']} · {AGENTS[nx['agent']]} →", type="primary", on_click=_go, args=(idx + 1,))
-            else:
-                with st.container(border=True):
-                    st.markdown("#### Where would turning insight into action make the biggest difference for you?")
-                    st.markdown("\n".join(f"- {q}" for q in DISCOVERY_QUESTIONS))
-                st.button("Play again from Tuesday", on_click=_go, args=(0,))
 
 
 render()
