@@ -49,7 +49,9 @@ SCENES = [
     {
         "id": "breakdown", "agent": "breakdown", "when": "Tue 21:14", "name": "Breakdown",
         "today": "A driver calls at night. The manager picks a shop on the spot, without checking the truck’s history, the warranty or the delivery deadline.",
-        "agent_does": "Pulls the fault history, warranty status, load deadline and nearby shops together, recommends a plan in two minutes, and sets warranty conditions before money is spent.",
+        "insight": "Unit 214 is derated 190 mi from a 10:00 delivery, and the failing part is still under a vendor warranty.",
+        "action": "Weighs dealer against mobile tech, books the repair within a spending cap, and keeps the driver and dispatch informed.",
+        "governed": "Road calls over $1,500 need the manager · failed parts are kept for warranty",
         "outcome": "Truck repaired overnight, delivery kept, both approvals logged with spending limits and warranty conditions.",
         "ev": [
             {"t": "clock", "v": "Tue Sep 29 · 21:14"},
@@ -109,7 +111,9 @@ SCENES = [
     {
         "id": "invoice", "agent": "auditor", "when": "Wed 08:31", "name": "Invoice",
         "today": "The repair bill arrives as a PDF. Someone types it in and it gets paid. Nobody checks it.",
-        "agent_does": "Reads the bill, matches it to what was approved, and checks it against standard labour times, duplicates, warranty, and how long telematics says the truck was really at the shop.",
+        "insight": "The bill has a duplicate fee and 2.1 h of labour above standard, and telematics shows the truck was on site only 4 h 39 m.",
+        "action": "Holds the payment, drafts the correction to the vendor, and codes the repair order in TMT.",
+        "governed": "Findings over $100 need approval · fleet labour standards · spend approved on the road call",
         "outcome": "Invoice held, corrections sent with evidence, repair order coded in TMT, follow-up scheduled.",
         "ev": [
             {"t": "clock", "v": "Wed Sep 30 · 08:31"},
@@ -158,7 +162,9 @@ SCENES = [
     {
         "id": "warranty", "agent": "warranty", "when": "Wed 08:36", "name": "Warranty",
         "today": "The broken part goes in the bin, and nobody remembers it was replaced only 7 months ago. The warranty money is lost.",
-        "agent_does": "Connects today’s repair to the earlier install, builds the evidence, drafts the claim, and tells the technician to keep the part before it is scrapped.",
+        "insight": "The DPF failed 7 months into a 12-month warranty, and a turbo actuator still under warranty is about to be scrapped.",
+        "action": "Builds the evidence, drafts both claims, and asks the technician to keep the part.",
+        "governed": "OEM, engine and vendor warranty terms · only the manager submits claims",
         "outcome": "Two claims filed with evidence, and a failed part saved from the scrap bin.",
         "ev": [
             {"t": "clock", "v": "Wed Sep 30 · 08:36"},
@@ -204,7 +210,9 @@ SCENES = [
     {
         "id": "plan", "agent": "planner", "when": "Thu 05:30", "name": "Shop plan",
         "today": "The shop lead checks four screens and phones dispatch to find out when trucks are free. Trucks with open defects go back out.",
-        "agent_does": "Builds the day’s plan from faults, driver defects, PM due dates and the load schedule, asks dispatch in Slack, and re-plans when the answer changes.",
+        "insight": "Three trucks need the shop, and each has a gap between loads.",
+        "action": "Agrees the slots with dispatch in Slack, creates work orders, orders tires, and fits in a new fault mid-morning.",
+        "governed": "Holding a truck past a pickup needs dispatch · parts orders inside the auto-approve limit",
         "outcome": "Shop and dispatch agreed a plan without a phone call, work orders and parts ordered, and a new fault fitted in mid-morning.",
         "ev": [
             {"t": "clock", "v": "Thu Oct 1 · 05:30"},
@@ -259,7 +267,9 @@ SCENES = [
     {
         "id": "follow", "agent": "auditor", "when": "Fri 09:00", "name": "Follow-up",
         "today": "Problems get spotted, but nobody chases them to the end.",
-        "agent_does": "Chases the vendor, checks the corrected bill, releases payment, totals the week in dollars, and suggests a rule from the pattern it saw.",
+        "insight": "The vendor hasn’t replied, and has billed labour above standard on 6 of 9 invoices this quarter.",
+        "action": "Chases the vendor, checks the corrected bill, releases payment, posts the weekly summary, and suggests a rule.",
+        "governed": "Payment is released only on approval · new rules are added only when the manager agrees",
         "outcome": "Vendor accepted the correction, payment released, and a new rule proposed from the pattern.",
         "ev": [
             {"t": "clock", "v": "Fri Oct 2 · 09:00"},
@@ -514,13 +524,24 @@ def _sidebar(scene_idx, started):
 
 def _intro():
     st.markdown('<span class="fp-eyebrow">FleetProfit · AI agents for fleet maintenance</span>', unsafe_allow_html=True)
-    st.title("One truck, four agents, three days")
+    st.title("From insight to action")
+    st.subheader("Four agents, one truck, one week")
     st.markdown(
-        "FleetProfit agents read the maintenance system (TMT), telematics, the TMS and the invoice inbox, decide what "
-        "needs doing, and bring each decision to the right person in Slack or Teams. People approve, push back in "
-        "plain words, or let a rule handle it.")
-    rows = "\n".join(f"| {sc['when']} | {AGENTS[sc['agent']]} | {_md(sc['today'])} |" for sc in SCENES)
-    st.markdown("| When | Agent | The problem today |\n|---|---|---|\n" + rows)
+        "Agents watch your maintenance, telematics and dispatch data all the time. They bring what matters to your "
+        "team in Slack as a clear insight with the next step ready to approve. Your rules and your fleet’s history "
+        "guide every action, and your people stay in control.")
+    p1, p2, p3 = st.columns(3)
+    with p1.container(border=True):
+        st.markdown("**Insight, ready to act on**")
+        st.caption("Each finding arrives with the work already drafted: the claim, the dispute, the schedule.")
+    with p2.container(border=True):
+        st.markdown("**Continuous**")
+        st.caption("Agents work all the time, set off by a fault code, an invoice or a new repair order.")
+    with p3.container(border=True):
+        st.markdown("**Governed**")
+        st.caption("Every action follows your rules and your fleet’s knowledge, with an approval trail.")
+    rows = "\n".join(f"| {sc['when']} | {AGENTS[sc['agent']]} | {_md(sc['insight'])} | {_md(sc['action'])} |" for sc in SCENES)
+    st.markdown("| When | Agent | Insight | Action |\n|---|---|---|---|\n" + rows)
     st.caption("On the right of each scene you see what the agent is doing as it works: what triggered it, "
                "which system it read, how it reasoned, which rule applied, and what it did.")
     st.button("Start: Tuesday 21:14 breakdown", type="primary", on_click=_go, args=(0,))
@@ -549,19 +570,23 @@ def render():
         st.subheader(AGENTS[sc["agent"]])
     clock_ph = h2.empty()
 
-    s1, s2 = st.columns(2)
+    s1, s2, s3 = st.columns(3)
     with s1.container(border=True):
-        st.caption("TODAY")
-        st.markdown(_md(sc["today"]))
+        st.caption("INSIGHT")
+        st.markdown(_md(sc["insight"]))
     with s2.container(border=True):
-        st.caption("WITH THE AGENT")
-        st.markdown(_md(sc["agent_does"]))
+        st.caption("ACTION")
+        st.markdown(_md(sc["action"]))
+    with s3.container(border=True):
+        st.caption("GOVERNED BY")
+        st.markdown(_md(sc["governed"]))
+    st.caption("Today, without the agent: " + _md(sc["today"]))
 
     left, right = st.columns([3, 2], gap="large")
     with left:
         st.markdown('<div class="fp-head">Slack / Teams</div>', unsafe_allow_html=True)
     with right:
-        st.markdown(f'<div class="fp-head">Agent activity · {AGENTS[sc["agent"]]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="fp-head">How the agent got from data to action · {AGENTS[sc["agent"]]}</div>', unsafe_allow_html=True)
 
     # replay the log; animate only what is new since the last rerun
     clock = "Tue Sep 29 · 21:00"
@@ -597,6 +622,7 @@ def render():
 
     # running totals
     t = S["tally"]
+    st.markdown('<div class="fp-head">Impact this week</div>', unsafe_allow_html=True)
     m = st.columns(4)
     m[0].metric("Saved on invoices", money(t["saved"]))
     m[1].metric("Warranty claimed", money(t["warranty"]))
@@ -626,7 +652,7 @@ def render():
                 st.button(f"Next: {nx['when']} · {AGENTS[nx['agent']]} →", type="primary", on_click=_go, args=(idx + 1,))
             else:
                 with st.container(border=True):
-                    st.markdown("#### Questions for your team")
+                    st.markdown("#### Where would turning insight into action make the biggest difference for you?")
                     st.markdown("\n".join(f"- {q}" for q in DISCOVERY_QUESTIONS))
                 st.button("Play again from Tuesday", on_click=_go, args=(0,))
 
