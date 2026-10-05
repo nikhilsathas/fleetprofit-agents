@@ -62,7 +62,7 @@ SCENES = [
             {"t": "trace", "k": "read", "s": "Telematics", "h": "Fault history, 30 days", "d": "SPN 3251 intermittent since Sep 2 (6 events) · 3 regens incomplete in the last 48 h"},
             {"t": "trace", "k": "read", "s": "TMT", "h": "Unit record", "d": "2022 Freightliner Cascadia · DD15 · 317,950 mi · in service Feb 2022"},
             {"t": "trace", "k": "read", "s": "TMT", "h": "Aftertreatment repair history", "d": "DPF assembly replaced Mar 4, 2026 at 271,900 mi · Hoosier Diesel Repair · RO 7714"},
-            {"t": "trace", "k": "read", "s": "Warranty", "h": "Coverage check", "d": "Vendor parts warranty, 12 months → 7 months and 46,050 mi used · claimable if the failed part is kept"},
+            {"t": "trace", "k": "read", "s": "Warranty", "h": "Coverage check", "d": "Vendor parts warranty, 12 months → just under 7 months and 46,050 mi used · claimable if the failed part is kept"},
             {"t": "trace", "k": "read", "s": "TMS", "h": "Current load", "d": "Load 48213 · steel coil, 44,000 lb · deliver Wed 10:00, Lincoln NE (appointment) · 190 mi to go"},
             {"t": "trace", "k": "read", "s": "Shops", "h": "Service options near the truck", "d": "Freightliner dealer · 14 mi · opens 06:00\nKC Interstate Diesel (mobile) · 9 mi · can arrive 22:30\nMidway Truck Center · 22 mi · open 24 h · no aftertreatment bay"},
             {"t": "trace", "k": "think", "s": "Agent", "h": "Compare options", "d": "Dealer protects warranty but delivery slips ~5 h · mobile tech keeps delivery, needs evidence kept · Midway likely needs a second tow"},
@@ -70,7 +70,7 @@ SCENES = [
             {"t": "msg", "ch": "fleet-ops", "time": "21:16", "b": {
                 "title": "Unit 214 derated on I-29 N, Kansas City",
                 "context": [["DPF pressure fault, 6 times since Sep 2, 3 failed regens in 48 h", "Telematics"],
-                            ["DPF replaced Mar 4 by Hoosier Diesel, 7 months into a 12-month parts warranty", "TMT + KB"],
+                            ["DPF replaced Mar 4 by Hoosier Diesel, just under 7 months into a 12-month parts warranty", "TMT + KB"],
                             ["Load 48213 to Lincoln NE, appointment Wed 10:00, 190 mi to go", "TMS"],
                             ["Driver R. Alvarez is safe on the shoulder", "Driver app"]],
                 "options": [["Freightliner dealer, 14 mi", "Warranty-friendly, opens 06:00", "Delivery slips to about 15:00", "Covered if claimed"],
@@ -214,8 +214,8 @@ SCENES = [
     {
         "id": "warranty", "agent": "warranty", "when": "Wed 08:41", "name": "Warranty",
         "case": "CASE-1044", "case_title": "Warranty claim · Unit 214 DPF · Hoosier Diesel", "opened": "08:41",
-        "today": "The broken part goes in the bin, and nobody remembers it was replaced only 7 months ago. The warranty money is lost.",
-        "insight": "The DPF failed 7 months into a 12-month warranty, and a turbo actuator still under warranty is about to be scrapped.",
+        "today": "The broken part goes in the bin, and nobody remembers it was replaced less than 7 months ago. The warranty money is lost.",
+        "insight": "The DPF failed just under 7 months into a 12-month warranty, and a turbo actuator still under warranty is about to be scrapped.",
         "action": "Built the evidence, set out what to claim and why, drafted both claims, and told the technician to keep the part.",
         "governed": "OEM, engine and vendor warranty terms · only the manager submits claims",
         "outcome": "Two claims filed with evidence the same morning, and a failed part saved from the scrap bin.",
@@ -230,7 +230,7 @@ SCENES = [
             {"t": "trace", "k": "policy", "s": "Rule", "h": "Who approves", "d": "Only the maintenance manager submits warranty claims"},
             {"t": "msg", "ch": "fleet-ops", "time": "08:43", "b": {
                 "title": "Warranty claim ready: Unit 214 DPF against Hoosier Diesel",
-                "context": [["Installed Mar 4 at 271,900 mi (RO 7714), failed Sep 29 at 317,950 mi: 7 months, 46,050 mi", "TMT + telematics"],
+                "context": [["Installed Mar 4 at 271,900 mi (RO 7714), failed Sep 29 at 317,950 mi: just under 7 months, 46,050 mi", "TMT + telematics"],
                             ["Terms: 12 months, parts plus labor at standard time", "KB"],
                             ["Evidence pack: both ROs, odometer readings, fault history; KC photos requested", "Harness"]],
                 "options": [["Part + standard labor", "Matches the terms exactly", "Leaves the road-call fee", "$3,298.00"],
