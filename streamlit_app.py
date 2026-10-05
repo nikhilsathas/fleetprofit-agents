@@ -1,4 +1,4 @@
-"""FleetProfit Agents · strawman demo (single-file Streamlit app).
+"""FleetProfit Agents · demo (single-file Streamlit app).
 
 One truck, four AI agents, one week, played out in a Slack-style chat with a live
 panel showing each agent's steps. All fleet data, vendors, people and amounts are
@@ -497,7 +497,7 @@ def _restart():
 def _sidebar(scene_idx, started):
     with st.sidebar:
         st.markdown("### FleetProfit")
-        st.markdown('<span class="fp-eyebrow">Strawman · sample data</span>', unsafe_allow_html=True)
+        st.markdown('<span class="fp-eyebrow">Sample data</span>', unsafe_allow_html=True)
         st.caption("Demo fleet shaped like a regional flatbed carrier: 70 tractors, 204 trailers, based in Nebraska.")
         st.markdown('<div class="fp-head">The week, one truck</div>', unsafe_allow_html=True)
         for i, sc in enumerate(SCENES):
@@ -513,7 +513,7 @@ def _sidebar(scene_idx, started):
 
 
 def _intro():
-    st.markdown('<span class="fp-eyebrow">Strawman for discussion · sample fleet and data</span>', unsafe_allow_html=True)
+    st.markdown('<span class="fp-eyebrow">FleetProfit · AI agents for fleet maintenance</span>', unsafe_allow_html=True)
     st.title("One truck, four agents, three days")
     st.markdown(
         "FleetProfit agents read the maintenance system (TMT), telematics, the TMS and the invoice inbox, decide what "
@@ -626,7 +626,7 @@ def render():
                 st.button(f"Next: {nx['when']} · {AGENTS[nx['agent']]} →", type="primary", on_click=_go, args=(idx + 1,))
             else:
                 with st.container(border=True):
-                    st.markdown("#### That’s the strawman. What would you change?")
+                    st.markdown("#### Questions for your team")
                     st.markdown("\n".join(f"- {q}" for q in DISCOVERY_QUESTIONS))
                 st.button("Play again from Tuesday", on_click=_go, args=(0,))
 
