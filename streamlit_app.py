@@ -11,7 +11,8 @@ import time
 
 import streamlit as st
 
-st.set_page_config(page_title="FleetProfit Agent", page_icon=":material/local_shipping:", layout="wide")
+if __name__ == "__main__":
+    st.set_page_config(page_title="FleetProfit Agent", page_icon=":material/local_shipping:", layout="wide")
 
 # ============================== SCRIPT (sample data) ==============================
 
@@ -454,7 +455,7 @@ def run_scene(scene, choices, S, log):
             elif t == "trace":
                 log.append(("trace", {"k": ev["k"], "s": ev["s"], "h": ev["h"], "d": resolve(ev["d"], S), "slow": ev.get("slow", False)}))
             elif t == "msg":
-                log.append(("msg", {"ch": ev["ch"], "time": ev["time"], "who": ev.get("who"), "text": ev.get("text"),
+                log.append(("msg", {"ch": ev["ch"], "time": ev["time"], "who": ev.get("who"), "text": resolve(ev.get("text"), S),
                                     "b": resolve(ev.get("b"), S), "agent": playbook}))
             elif t == "choice":
                 if picks is None:
@@ -1002,4 +1003,5 @@ def render():
     m[3].metric("Admin time returned (est.)", "{:.1f} h".format(t["minutes"] / 60))
 
 
-render()
+if __name__ == "__main__":
+    render()
